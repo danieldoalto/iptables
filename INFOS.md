@@ -137,6 +137,14 @@ Essa abordagem mantém o código original o mais intacto possível, facilitando 
   - **Backend**: Adicionadas as rotas `/previewMoveRules` e `/moveRulesBlock` em `handlers_ext.js` para pré-visualizar e aplicar a movimentação de blocos de regras de forma atômica.
   - **Frontend**: Criada uma janela modal para que o usuário defina o bloco de regras a ser movido e o destino, com uma tela de confirmação que exibe um `diff` visual das mudanças antes de aplicá-las.
 
+- **Implementada funcionalidade Edit Chain (Edição textual de chain)**:
+  - **Backend**: Adicionada a rota `/editChain` em `handlers_ext.js`, permitindo editar todas as regras de uma chain específica via texto, de forma segura e atômica, preservando as demais chains/tabelas.
+    - Algoritmo robusto garante que apenas as regras da chain editada são substituídas (case-insensitive, sem duplicidade).
+    - Logs detalhados para diagnóstico de problemas e auditoria.
+  - **Frontend**: Modal inspirado na janela de movimentação de regras, com campo de texto (1 regra por linha, numerada para visualização), botões Load, Reset, Salvar e Exit.
+    - Numeração é removida automaticamente antes de aplicar as regras.
+    - Permite importar regras de arquivo texto e restaurar conteúdo original facilmente.
+
 - **Implementada funcionalidade de Backup e Restauração**:
   - **Backend**: Adicionadas as rotas `/backupRules` e `/restoreRules` em `handlers_ext.js` para gerar e restaurar backups utilizando `iptables-save` e `iptables-restore`.
   - **Frontend**: Criada uma janela modal em `index.html` e a lógica de interação em `tpl/app.js` para permitir que o usuário baixe e envie arquivos de backup.
@@ -150,6 +158,10 @@ Essa abordagem mantém o código original o mais intacto possível, facilitando 
   - **Segurança**: O sistema de autenticação, que era baseado em IP, foi substituído por um mecanismo de sessão segura com cookies `HttpOnly`.
   - **Sessões Únicas**: Cada login agora gera um ID de sessão único, permitindo que múltiplos clientes se autentiquem de forma independente, mesmo que compartilhem o mesmo IP.
 
+
+## Correções e Melhorias Recentes
+- [2025-06] **Edit Chain**: Corrigido bug crítico onde regras eram duplicadas ao salvar alterações em uma chain. Agora a substituição é precisa e atômica, sem afetar outras chains.
+- [2025-06] **Logs detalhados**: Backend aprimorado com logs extensivos para facilitar debug e auditoria.
 
 ## Próximos Passos
 - [ ] Adicionar mais testes
