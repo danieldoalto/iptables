@@ -327,7 +327,7 @@ exports.previewMoveRules = previewMoveRules;
 
 /**
  * Manipulador para a rota /editChain.
- * Endpoint temporário para futura implementação de edição de chains.
+ * Permite carregar e salvar regras de uma chain específica em formato textual.
  */
 function editChain(req, res) {
     console.log("Request handler 'editChain' was called.");
@@ -336,23 +336,277 @@ function editChain(req, res) {
     var body = '';
     req.on('data', function(data) {
         body += data;
-        console.log("[editChain] Recebendo dados: " + data);
     });
     
     req.on('end', function() {
         try {
             var post = querystring.parse(body);
             console.log("[editChain] Dados recebidos:", post);
-            console.log("[editChain] Chain:", post.chain, "Table:", post.table);
+            console.log("[editChain] Chain:", post.chain, "Table:", post.table, "Action:", post.action);
             
-            // Resposta temporária
-            res.writeHead(200, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ 
-                success: true, 
-                message: "Edit Chain endpoint is working. Functionality coming soon!",
-                data: post
-            }));
-            console.log("[editChain] Resposta enviada com sucesso.");
+            if (!post.chain || !post.table) {
+                return sendError(res, "Chain e table são parâmetros obrigatórios.");
+            }
+            
+            let chain = post.chain;
+            let table = post.table;
+            const action = post.action || 'load'; // Default é 'load'
+            
+            // Normalizar nomes de chains padrão (case insensitive)
+            const standardChains = {
+                "input": "INPUT",
+                "forward": "FORWARD",
+                "output": "OUTPUT",
+                "prerouting": "PREROUTING",
+                "postrouting": "POSTROUTING"
+            };
+            
+            // Se o nome da chain fornecido for uma versão em minúsculo de uma chain padrão, normalize
+            if (standardChains[chain.toLowerCase()]) {
+                const originalChain = chain;
+                chain = standardChains[chain.toLowerCase()];
+                console.log(`[editChain] Chain normalizada de ${originalChain} para ${chain}`);
+            }
+            
+            // Normalizar nomes de tabelas (case insensitive)
+            const standardTables = {
+                "filter": "filter", 
+                "nat": "nat", 
+                "mangle": "mangle", 
+                "raw": "raw", 
+                "security": "security"
+            };
+            
+            // Se o nome da tabela fornecido for uma versão diferente de case de uma tabela padrão, normalize
+            if (standardTables[table.toLowerCase()]) {
+                const originalTable = table;
+                table = standardTables[table.toLowerCase()];
+                console.log(`[editChain] Tabela normalizada de ${originalTable} para ${table}`);
+            }
+            
+            console.log(`[editChain] Chain: ${chain} Table: ${table} Action: ${action}`);
+
+            // Ação de carregar regras
+            if (action === 'load') {
+                console.log(`[editChain] Carregando regras da chain ${chain} na tabela ${table}`);
+                
+                // Executar iptables-save e filtrar apenas a chain desejada
+                exec("sudo iptables-save", function(error, stdout, stderr) {
+                    if (error) {
+                        console.error("[editChain] Erro ao executar iptables-save:", stderr);
+                        return sendError(res, `Erro ao carregar regras: ${stderr}`);
+                    }
+                    
+                    try {
+                        // Processar saída para extrair apenas as regras da chain desejada
+                        console.log(`[editChain] DEBUG: Processando regras para chain ${chain} na tabela ${table}`);
+                        const lines = stdout.split('\n');
+                        console.log(`[editChain] DEBUG: Total de linhas no output: ${lines.length}`);
+                        
+                        let chainFound = false;
+                        let currentTable = '';
+                        let rules = [];
+                        let lineNumber = 1;
+                        
+                        // Log das primeiras linhas para debug
+                        console.log("[editChain] DEBUG: Primeiras 10 linhas do output:");
+                        for (let i = 0; i < Math.min(10, lines.length); i++) {
+                            console.log(`[editChain] DEBUG: ${i}: ${lines[i]}`);
+                        }
+                        
+                        for (const line of lines) {
+                            // Detectar a tabela atual
+                            if (line.startsWith('*')) {
+                                currentTable = line.substring(1).trim();
+                                console.log(`[editChain] DEBUG: Tabela atual alterada para: ${currentTable}`);
+                                continue;
+                            }
+                            
+                            // Detectar o início da chain
+                            if (line.startsWith(':')) {
+                                console.log(`[editChain] DEBUG: Linha de definição de chain: ${line}`);
+                                // Verificar se a linha define a chain que estamos procurando na tabela correta
+                                // O formato é algo como ":CHAIN POLICY [COUNTERS]" - então procuramos ":chain " ou ":chain"
+                                const chainName = line.split(" ")[0].substring(1);
+                                if (chainName === chain && currentTable === table) {
+                                    chainFound = true;
+                                    console.log(`[editChain] DEBUG: Chain ${chain} encontrada na tabela ${table}`);
+                                }
+                                continue;
+                            }
+                            
+                            // Se estamos na tabela correta, verificar se a regra pertence à chain
+                            if (currentTable === table && !line.startsWith(':') && !line.startsWith('*') && !line.startsWith('COMMIT')) {
+                                // Verificar se a regra pertence à chain atual
+                                if (line.includes(`-A ${chain} `) || line === `-A ${chain}`) {
+                                    console.log(`[editChain] DEBUG: Regra encontrada: ${line}`);
+                                    // Adicionar número da linha antes da regra
+                                    rules.push(`${lineNumber++}: ${line}`);
+                                }
+                            }
+                        }
+                        
+                        console.log(`[editChain] DEBUG: Chain encontrada? ${chainFound}, Total de regras encontradas: ${rules.length}`);
+                        
+                        // Se a chain não foi encontrada, retornar erro
+                        if (!chainFound) {
+                            console.log(`[editChain] ERRO: Chain ${chain} não encontrada na tabela ${table}.`);
+                            return sendError(res, `Chain ${chain} não encontrada na tabela ${table}.`);
+                        }
+                        
+                        // Se a chain não tem regras, apenas gerar log, mas não é erro
+                        if (rules.length === 0) {
+                            console.log(`[editChain] AVISO: A chain ${chain} na tabela ${table} não possui regras.`);
+                        }
+                        
+                        // Enviar as regras para o frontend
+                        res.writeHead(200, { "Content-Type": "application/json" });
+                        res.end(JSON.stringify({
+                            success: true,
+                            rules: rules.join('\n')
+                        }));
+                        console.log(`[editChain] ${rules.length} regras carregadas com sucesso.`);
+                    } catch (err) {
+                        console.error("[editChain] Erro ao processar regras:", err);
+                        return sendError(res, `Erro ao processar regras: ${err.message}`);
+                    }
+                });
+            }
+            // Ação de salvar regras
+            else if (action === 'save') {
+                console.log(`[editChain] Salvando regras para a chain ${chain} na tabela ${table}`);
+                
+                if (!post.rules) {
+                    return sendError(res, "Nenhuma regra fornecida para salvar.");
+                }
+                
+                const editedRules = post.rules;
+                
+                // Primeiro, obter todo o conjunto de regras atual
+                exec("sudo iptables-save", function(error, stdout, stderr) {
+                    if (error) {
+                        console.error("[editChain] Erro ao executar iptables-save:", stderr);
+                        return sendError(res, `Erro ao obter regras atuais: ${stderr}`);
+                    }
+                    
+                    try {
+                        // Processar o arquivo de regras atual
+                        const lines = stdout.split('\n');
+                        console.log(`[editChain] DEBUG: Total de linhas no output: ${lines.length}`);
+                        
+                        // Remover números de linha do texto editado pelo usuário
+                        console.log(`[editChain] DEBUG: Regras brutas recebidas:\n${editedRules}`);
+                        const userRules = editedRules.split('\n')
+                            .map(line => {
+                                // Remover padrão "12: " do início das linhas
+                                const cleanedLine = line.replace(/^\d+:\s*/, '');
+                                console.log(`[editChain] DEBUG: Linha original: "${line}" -> Limpa: "${cleanedLine}"`);
+                                return cleanedLine;
+                            })
+                            .filter(line => line.trim() !== '');
+                        
+                        console.log(`[editChain] DEBUG: Regras editadas do usuário após limpeza: ${userRules.length}`);
+                        console.log(`[editChain] DEBUG: Regras processadas para aplicação:\n${userRules.join('\n')}`);
+                        
+                        
+                        // ABORDAGEM BASEADA NO moveRulesBlock:
+                        // 1. Identificar regras da chain atual e outras linhas
+                        console.log(`[editChain] DEBUG: Verificando regras para chain ${chain} (case insensitive)`);                        
+                        
+                        // Adicionar logs para verificar o formato exato das regras antes do filtro
+                        let chainRules = [];
+                        let otherLines = [];
+                        
+                        // Imprimir algumas regras para debug e verificar formato exato
+                        console.log('[editChain] DEBUG: Exemplos de linhas de regras para análise:');
+                        for (let i = 0; i < Math.min(10, lines.length); i++) {
+                            console.log(`[editChain] DEBUG: Linha ${i}: ${lines[i]}`);
+                        }
+                        
+                        // Verificação mais simples e robusta
+                        for (const line of lines) {
+                            // Verificamos simplesmente se a linha começa com -A seguido do nome da chain (case insensitive)
+                            // Usamos uma abordagem mais simples e robusta
+                            if (line.trim() !== '') {
+                                const lineUpper = line.toUpperCase();
+                                const chainUpper = chain.toUpperCase();
+                                if (lineUpper.indexOf(`-A ${chainUpper}`) === 0) {
+                                    console.log(`[editChain] DEBUG: Regra identificada para remoção: ${line}`);
+                                    chainRules.push(line);
+                                } else {
+                                    otherLines.push(line);
+                                }
+                            }
+                        }
+                        
+                        console.log(`[editChain] DEBUG: Total de regras identificadas da chain ${chain}: ${chainRules.length}`);
+                        console.log(`[editChain] DEBUG: Linhas mantidas (sem as regras da chain atual): ${otherLines.length}`);
+                        
+                        // 2. Encontrar onde inserir as novas regras (antes do COMMIT da tabela correspondente)
+                        // Percorrer o array para encontrar o índice exato do COMMIT para a tabela correta
+                        let currentTable = '';
+                        let commitIndex = -1;
+                        
+                        for (let i = 0; i < otherLines.length; i++) {
+                            const line = otherLines[i];
+                            
+                            if (line.startsWith('*')) {
+                                currentTable = line.substring(1).trim();
+                                continue;
+                            }
+                            
+                            if (line === 'COMMIT' && currentTable === table) {
+                                commitIndex = i;
+                                break;
+                            }
+                        }
+                        
+                        if (commitIndex === -1) {
+                            console.error(`[editChain] ERRO: Não foi possível encontrar o ponto de inserção para a tabela ${table}`);
+                            return sendError(res, `Tabela ${table} não encontrada ou formato inesperado.`);
+                        }
+                        
+                        console.log(`[editChain] DEBUG: Ponto de inserção encontrado: antes da linha ${commitIndex} (COMMIT da tabela ${table})`);
+                        
+                        // 3. Reconstruir o arquivo de regras completo
+                        const finalRules = [
+                            ...otherLines.slice(0, commitIndex),
+                            ...userRules,  // Inserir as regras editadas pelo usuário
+                            ...otherLines.slice(commitIndex)
+                        ];
+                        
+                        console.log(`[editChain] DEBUG: Total de regras reconstruídas: ${finalRules.length}`);
+                        
+                        // 4. Aplicar as novas regras com iptables-restore
+                        const rulesContent = finalRules.join('\n');
+                        
+                        // Aplicar as novas regras usando pipe para iptables-restore
+                        const restoreProcess = exec('sudo iptables-restore', (restoreError, restoreStdout, restoreStderr) => {
+                            if (restoreError) {
+                                console.error(`[editChain] ERRO: Falha ao aplicar regras: ${restoreStderr}`);
+                                return sendError(res, `Erro ao aplicar regras editadas: ${restoreStderr}`);
+                            }
+                            
+                            console.log("[editChain] Regras aplicadas com sucesso.");
+                            res.writeHead(200, { "Content-Type": "application/json" });
+                            res.end(JSON.stringify({ 
+                                success: true,
+                                message: "Regras atualizadas com sucesso."
+                            }));
+                        });
+                        
+                        console.log("[editChain] Enviando regras para iptables-restore...");
+                        restoreProcess.stdin.write(rulesContent);
+                        restoreProcess.stdin.end();
+                    } catch (err) {
+                        console.error("[editChain] Erro ao processar regras editadas:", err);
+                        return sendError(res, `Erro ao processar regras editadas: ${err.message}`);
+                    }
+                });
+            }
+            else {
+                return sendError(res, `Ação desconhecida: ${action}`);
+            }
         } catch (error) {
             console.error("[editChain] Erro ao processar requisição:", error);
             res.writeHead(500, { "Content-Type": "application/json" });

@@ -178,7 +178,7 @@ const app = {
     
     /**
      * Inicia o processo de edição da chain atual.
-     * Por enquanto, apenas chama o endpoint para teste.
+     * Abre uma modal que permite editar as regras da chain como texto.
      */
     editChain: function() {
         // Usar as variáveis globais channel e table definidas em client.js
@@ -191,26 +191,116 @@ const app = {
         }
         
         console.log("[EditChain] Chain:", currentChain, "Table:", currentTable);
-        // Chama o endpoint de edição de chain
-        $.ajax({
-            type: 'POST',
-            url: '/editChain',
-            data: {
-                chain: currentChain,
-                table: currentTable
-            },
-            dataType: 'json',
-            success: function(response) {
-                if (response.success) {
-                    showInfo(response.message || "Edit Chain endpoint chamado com sucesso!");
-                } else {
-                    showError(response.error || "Erro ao chamar o endpoint de edição de chain.");
+        
+        // Variável para armazenar o conteúdo original das regras
+        let originalRules = "";
+        
+        // Configurar a modal de edição
+        $("#edit-chain-name").text(currentChain);
+        $("#edit-table-name").text(currentTable);
+        
+        // Função para carregar as regras da chain no editor
+        const loadChainRules = function() {
+            $.ajax({
+                type: 'POST',
+                url: '/editChain',
+                data: {
+                    action: 'load',
+                    chain: currentChain,
+                    table: currentTable
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        console.log("[EditChain] Regras carregadas:", response.rules);
+                        $("#chain-rules-editor").val(response.rules);
+                        originalRules = response.rules; // Guarda as regras originais
+                    } else {
+                        showError(response.error || "Erro ao carregar regras da chain.");
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error("[EditChain] Erro ao carregar regras:", error);
+                    showError("Erro na requisição: " + error);
                 }
-            },
-            error: function(xhr, status, error) {
-                console.error("[EditChain] Erro:", error);
-                showError("Erro na requisição: " + error);
+            });
+        };
+        
+        // Função para salvar as regras editadas
+        const saveChainRules = function() {
+            const editedRules = $("#chain-rules-editor").val();
+            
+            $.ajax({
+                type: 'POST',
+                url: '/editChain',
+                data: {
+                    action: 'save',
+                    chain: currentChain,
+                    table: currentTable,
+                    rules: editedRules
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        showInfo("Regras atualizadas com sucesso!");
+                        $("#edit-chain-dialog").dialog("close");
+                        rules.showList(currentChain, currentTable); // Atualiza a view
+                    } else {
+                        showError(response.error || "Erro ao salvar regras da chain.");
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error("[EditChain] Erro ao salvar regras:", error);
+                    showError("Erro na requisição: " + error);
+                }
+            });
+        };
+        
+        // Configuração da modal
+        const dialog = $("#edit-chain-dialog").dialog({
+            autoOpen: true,
+            resizable: true,
+            height: "auto",
+            width: 800,
+            modal: true,
+            close: function() {
+                $("#chain-rules-editor").val(""); // Limpa o editor ao fechar
             }
         });
+        
+        // Configura o botão Load para abrir o seletor de arquivos
+        $("#load-rules-file").off('click').on('click', function() {
+            $("#rules-file-input").click();
+        });
+        
+        // Configura o input de arquivo para carregar o conteúdo quando um arquivo é selecionado
+        $("#rules-file-input").off('change').on('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    $("#chain-rules-editor").val(e.target.result);
+                };
+                reader.readAsText(file);
+            }
+        });
+        
+        // Configura o botão Reset
+        $("#reset-chain-rules").off('click').on('click', function() {
+            $("#chain-rules-editor").val(originalRules);
+        });
+        
+        // Configura o botão Salvar
+        $("#save-chain-rules").off('click').on('click', function() {
+            saveChainRules();
+        });
+        
+        // Configura o botão Exit
+        $("#exit-chain-edit").off('click').on('click', function() {
+            $("#edit-chain-dialog").dialog("close");
+        });
+        
+        // Carrega as regras da chain
+        loadChainRules();
     }
 };

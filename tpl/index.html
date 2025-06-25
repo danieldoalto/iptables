@@ -82,8 +82,8 @@
 				<a class="button" onclick="tools.showLogs();" title="Show system logs">SysLogs <img class="icon" src="/img/logs.png"/></a>
 				<a class="button" onclick="tools.load();" title="Load rules from file">Load <img class="icon" src="/img/load.png"/></a>
 				<a class="button" onclick="tools.save();" title="Save rules into file">Save <img class="icon" src="/img/save.png"/></a>
-				<a class="button" onclick="app.moveRule();" title="Move a rule to a different position">Move <img class="icon" src="/img/edit.png"/></a>
 				<a class="button" onclick="app.backup();" title="Create a backup of the current rules">Backup <img class="icon" src="/img/save.png"/></a>
+				<a class="button" onclick="app.moveRule();" title="Move a rule to a different position">Move <img class="icon" src="/img/edit.png"/></a>
 				<a class="button" onclick="app.editChain();" title="Edit current chain properties">Edit Chain <img class="icon" src="/img/edit.png"/></a>
 				<a class="button" onclick="rules.resetCounters();" title="Reset counters for current chain">Reset <img class="icon" src="/img/reset.png"/></a>
 			</div>
@@ -238,6 +238,28 @@
 							<textarea id="new-rules-preview" readonly></textarea>
 						</div>
 					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Janela Modal para Edição de Chain -->
+		<div id="edit-chain-dialog" title="Editar Conteúdo da Chain" style="display:none;">
+			<div class="modal-container">
+				<div class="modal-section">
+					<p class="modal-description">Edite as regras da chain abaixo. Cada linha representa uma regra.</p>
+					<div style="margin-bottom: 15px;">
+						<span class="chain-info">Chain: <strong id="edit-chain-name"></strong></span>
+						<span class="table-info">Tabela: <strong id="edit-table-name"></strong></span>
+					</div>
+					<textarea id="chain-rules-editor" rows="30" style="width: 100%; font-family: monospace;"></textarea>
+					<div class="action-button-container" style="margin-top: 15px; display: flex; justify-content: space-between;">
+						<button id="load-rules-file" class="secondary-button"><i class="fa fa-folder-open"></i> Load</button>
+						<button id="reset-chain-rules" class="secondary-button"><i class="fa fa-refresh"></i> Reset</button>
+						<button id="save-chain-rules" class="primary-button"><i class="fa fa-check"></i> Salvar</button>
+						<button id="exit-chain-edit" class="secondary-button"><i class="fa fa-times"></i> Exit</button>
+					</div>
+					<!-- Campo oculto para upload de arquivo -->
+					<input type="file" id="rules-file-input" style="display: none;" accept=".rules,.txt">
 				</div>
 			</div>
 		</div>
