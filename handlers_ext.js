@@ -293,7 +293,7 @@ function moveRulesBlock(req, res) {
                 const newRulesContent = finalRules.join('\n');
                 
                 // Aplicar as novas regras com iptables-restore
-                const restoreCmd = `sudo iptables-restore --noflush`;
+                const restoreCmd = `sudo iptables-restore`;
                 console.log(`[DEBUG] Executando comando: ${restoreCmd}`);
                 
                 const restoreProcess = exec(restoreCmd, (restoreError, restoreStdout, restoreStderr) => {
