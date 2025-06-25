@@ -2,6 +2,16 @@ iptables WEB gui
 
 ![ScreenShot](http://i.mcgl.ru/RGGJv4MAvA)
 
+### Features ###
+
+* View and edit iptables rules in a user-friendly web interface.
+* Add and delete rules with a simple click.
+* Create and manage custom chains.
+* **Move rule blocks**: Select a range of rules and move them to a new position within the same chain, with a visual preview of the changes before applying.
+* **Backup and Restore**: Create a full backup of your rules and restore them from a file.
+* Real-time monitoring of syslog and network traffic.
+* User authentication to secure access.
+
 ### Howto install ###
 
 In first time you need to Download and install Node.js

@@ -31,6 +31,9 @@ O iptables Manager é uma aplicação web para gerenciar regras de firewall ipta
 - **Construtor de Regras (Rule Builder)**: Um diálogo que guia o usuário na criação de regras complexas, com campos para protocolo, origem, destino, estado, etc.
 - **Painéis de Monitoramento**: Diálogos para visualização em tempo real de `syslog` e `tcpdump`.
 - **Diálogo de Configurações**: Permite ao usuário definir apelidos para interfaces de rede e portas, facilitando o reconhecimento nas regras.
+- **Backup e Restauração**: Interface modal para criar um backup completo das regras (`iptables-save`) e restaurá-lo a partir de um arquivo, substituindo as regras existentes (`iptables-restore`).
+- **Movimentação de Regras**: Permite selecionar um bloco de regras e movê-lo para uma nova posição dentro da mesma chain. Inclui uma janela de pré-visualização que compara o estado antigo e o novo antes de aplicar as mudanças, garantindo uma operação segura e atômica através de `iptables-save` e `iptables-restore`.
+
 
 ### Gerenciamento de Regras
 - Visualização de regras iptables
@@ -130,6 +133,14 @@ Essa abordagem mantém o código original o mais intacto possível, facilitando 
 - Concluída a documentação interna (comentários) de todos os principais arquivos JavaScript do projeto (`server.js`, `handlers.js`, `tpl/client.js`, `tpl/template.js`, `tpl/tools.js`).
 - Organização do código em módulos.
 - Melhoria nos comentários e documentação geral.
+- **Implementada funcionalidade de Movimentação de Regras**: 
+  - **Backend**: Adicionadas as rotas `/previewMoveRules` e `/moveRulesBlock` em `handlers_ext.js` para pré-visualizar e aplicar a movimentação de blocos de regras de forma atômica.
+  - **Frontend**: Criada uma janela modal para que o usuário defina o bloco de regras a ser movido e o destino, com uma tela de confirmação que exibe um `diff` visual das mudanças antes de aplicá-las.
+
+- **Implementada funcionalidade de Backup e Restauração**:
+  - **Backend**: Adicionadas as rotas `/backupRules` e `/restoreRules` em `handlers_ext.js` para gerar e restaurar backups utilizando `iptables-save` e `iptables-restore`.
+  - **Frontend**: Criada uma janela modal em `index.html` e a lógica de interação em `tpl/app.js` para permitir que o usuário baixe e envie arquivos de backup.
+
 
 ## Próximos Passos
 - [ ] Adicionar mais testes
