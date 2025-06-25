@@ -8,13 +8,14 @@ var proc = require('child_process');
 var fs = require("fs");
 var url = require("url");
 var querystring = require("querystring");
+var crypto = require("crypto");
 
 module.exports = {
 	// --- Autenticação e Configurações ---
 
 	
 	auth: false, // Flag que indica se a autenticação está habilitada globalmente (se não há senha).
-	authUsers: {}, // Objeto para rastrear sessões de usuários autenticados pelo IP.
+	authUsers: {}, // Objeto para rastrear sessões de usuários autenticados por ID de sessão.
 	
 	settingsDir: "/etc/iptables/config.json", // Caminho para o arquivo de configuração.
 	_settings: { // Objeto com as configurações padrão.
@@ -256,8 +257,7 @@ module.exports = {
 
 	/**
 	 * Rota: /login
-	 * Processa a tentativa de login. Se bem-sucedido, armazena o IP do usuário e redireciona para a home.
-	 * Se o caminho não for /login, redireciona para a página de autenticação.
+	 * Processa a tentativa de login. Se bem-sucedido, cria uma sessão e a envia como um cookie.
 	 */
 	authMe: function(req, res) {
 		var pathname = url.parse(req.url).pathname;
@@ -274,9 +274,16 @@ module.exports = {
 
 				var auth = login === module.exports._settings.user && pass === module.exports._settings.pass;
 				if(auth) {
-					var ip = req.connection.remoteAddress;
-					module.exports.authUsers[ip] = 1;
-					res.writeHead(301, {"Location": "/"});
+					const sessionId = crypto.randomBytes(32).toString('hex');
+					const ip = req.connection.remoteAddress;
+					// Armazena a sessão com informações do usuário e IP
+					module.exports.authUsers[sessionId] = { user: login, ip: ip, created: Date.now() };
+					
+					// Envia o cookie de sessão para o cliente
+					res.writeHead(301, {
+						"Location": "/",
+						"Set-Cookie": `sessionId=${sessionId}; HttpOnly; Path=/`
+					});
 					res.end();
 				}
 				else {
@@ -285,7 +292,7 @@ module.exports = {
 			});
 		}
 		else {
-			// Corrigir o redirecionamento para a página de autenticação
+			// Redireciona para a página de autenticação
 			fs.readFile('./tpl/auth.html', function(err, data) {
 				if (err) {
 					res.writeHead(500);
@@ -299,36 +306,60 @@ module.exports = {
 	},
 	
 	/**
-	 * Verifica se um usuário está autenticado, baseado no IP da requisição.
+	 * Verifica se um usuário está autenticado, baseado no cookie de sessão.
 	 * @param {object} req - O objeto da requisição.
 	 * @returns {boolean} - True se o usuário estiver autenticado, false caso contrário.
 	 */
 	isAuth: function(req) {
-		var ip = req.connection.remoteAddress;
 		// Se a senha não estiver definida, a autenticação não é necessária
 		if (module.exports.auth) {
 			return true;
 		}
-		return module.exports.authUsers[ip];
+
+		const cookies = req.headers.cookie;
+        if (!cookies) {
+            return false;
+        }
+
+		// Extrai o sessionId do cookie
+        const sessionCookie = cookies.split(';').find(c => c.trim().startsWith('sessionId='));
+        if (!sessionCookie) {
+            return false;
+        }
+
+        const sessionId = sessionCookie.split('=')[1];
+		
+		// Verifica se a sessão é válida
+        return module.exports.authUsers[sessionId];
 	},
 
 	/**
-	 * Verifica se um usuário está autenticado, baseado no IP da requisição.
 	 * Rota: /logout
-	 * Desconecta o usuário removendo seu IP da lista de usuários autenticados e redireciona para a página de login.
+	 * Desconecta o usuário, invalidando a sessão no servidor e removendo o cookie do cliente.
 	 */
 	logout: function(req, res) {
-		var ip = req.connection.remoteAddress;
-		module.exports.authUsers[ip] = 0;
+		const cookies = req.headers.cookie;
+        if (cookies) {
+			const sessionCookie = cookies.split(';').find(c => c.trim().startsWith('sessionId='));
+			if (sessionCookie) {
+				const sessionId = sessionCookie.split('=')[1];
+				// Remove a sessão do servidor
+				delete module.exports.authUsers[sessionId];
+			}
+		}
 		
-		// Corrigir o redirecionamento para a página de autenticação
+		// Expira o cookie no cliente e redireciona para a página de login
 		fs.readFile('./tpl/auth.html', function(err, data) {
 			if (err) {
 				res.writeHead(500);
 				res.end('Erro ao carregar página de autenticação: ' + err);
 				return;
 			}
-			res.writeHead(200, {"Content-Type": "text/html", "Cache-Control": "no-cache"});
+			res.writeHead(200, {
+				"Content-Type": "text/html", 
+				"Cache-Control": "no-cache",
+				"Set-Cookie": "sessionId=; HttpOnly; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT"
+			});
 			res.end(data);
 		});
 	}
