@@ -99,53 +99,70 @@ const app = {
      * Abre a janela modal para funcionalidades de Backup e Restore.
      */
     backup: function() {
+        // Configura o evento para mostrar o nome do arquivo selecionado
+        $('#restore-file-input').on('change', function() {
+            const fileName = this.files[0] ? this.files[0].name : 'Nenhum arquivo selecionado';
+            $('#file-name-display').text(fileName);
+        });
+
+        // Configura o botão de download de backup
+        $('#download-backup').off('click').on('click', function() {
+            console.log("Iniciando download do backup...");
+            window.location.href = '/backupRules';
+        });
+
+        // Configura o formulário de restauração
+        $('#restore-form').off('submit').on('submit', function(e) {
+            e.preventDefault();
+            
+            const fileInput = document.getElementById('restore-file-input');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                showError("Por favor, selecione um arquivo de backup para restaurar.");
+                return false;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const rulesContent = e.target.result;
+                showInfo("Enviando arquivo de backup para o servidor...");
+
+                // Envia o conteúdo para o backend
+                $.post("/restoreRules", { content: rulesContent })
+                    .done(function(response) {
+                        if(response.success) {
+                            showInfo("Backup restaurado com sucesso! As regras foram atualizadas.");
+                            // Recarrega a visualização principal para mostrar as novas regras
+                            rules.showChannel();
+                            $("#backup-dialog").dialog("close");
+                        } else {
+                            showError("Falha ao restaurar backup: " + response.error);
+                        }
+                    })
+                    .fail(function() {
+                        showError("Erro de comunicação ao tentar restaurar o backup.");
+                    });
+            };
+
+            reader.readAsText(file);
+        });
+
+        // Abre a janela modal
         $("#backup-dialog").dialog({
             resizable: false,
             height: "auto",
-            width: 400,
+            width: 550,
             modal: true,
             buttons: {
-                "Gerar Backup": function() {
-                    console.log("Iniciando download do backup...");
-                    // Redireciona para a rota de backup, o que iniciará o download
-                    window.location.href = '/backupRules';
-                },
-                "Recuperar Backup": function() {
-                    const fileInput = document.getElementById('restore-file-input');
-                    const file = fileInput.files[0];
-
-                    if (!file) {
-                        showError("Por favor, selecione um arquivo de backup para recuperar.");
-                        return;
-                    }
-
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const rulesContent = e.target.result;
-                        showInfo("Enviando arquivo de backup para o servidor...");
-
-                        // Envia o conteúdo para o backend
-                        $.post("/restoreRules", { content: rulesContent })
-                            .done(function(response) {
-                                if(response.success) {
-                                    showInfo("Backup recuperado com sucesso! As regras foram atualizadas.");
-                                    // Recarrega a visualização principal para mostrar as novas regras
-                                    rules.showChannel(); 
-                                } else {
-                                    showError("Falha ao recuperar backup: " + response.error);
-                                }
-                            })
-                            .fail(function() {
-                                showError("Erro de comunicação ao tentar recuperar o backup.");
-                            });
-                    };
-
-                    reader.readAsText(file);
-                    $(this).dialog("close");
-                },
-                "Cancelar": function() {
+                "Fechar": function() {
                     $(this).dialog("close");
                 }
+            },
+            open: function() {
+                // Reset do formulário e da exibição do nome do arquivo
+                $('#restore-form')[0].reset();
+                $('#file-name-display').text('Nenhum arquivo selecionado');
             }
         });
     }

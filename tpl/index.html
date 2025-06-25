@@ -166,16 +166,41 @@
 
 		<!-- Janela Modal para Backup e Restore -->
 		<div id="backup-dialog" title="Backup & Restore de Regras" style="display:none;">
-			<p><b>Fazer Backup</b></p>
-			<p>Clique no botão abaixo para baixar um arquivo <code>.fw</code> com as regras atuais.</p>
-			<button id="download-backup">Gerar e Baixar Backup</button>
-			<hr style="margin: 15px 0;">
-			<p><b>Restaurar de um Arquivo</b></p>
-			<form id="restore-form" enctype="multipart/form-data" style="display: flex; align-items: center; gap: 10px;">
-				<label for="restore-file-input">Selecione o arquivo de backup:</label>
-				<input type="file" id="restore-file-input" name="rulesFile" accept=".fw">
-				<button type="submit" id="upload-restore">Restaurar Regras</button>
-			</form>
+			<div class="modal-container">
+				<!-- Seção de Backup -->
+				<div class="backup-section">
+					<h3>Fazer Backup</h3>
+					<div class="backup-description">
+						<p>Clique no botão abaixo para baixar um arquivo <code>.rules</code> com as regras atuais.</p>
+						<p class="small-text">Isso gerará um arquivo de backup (<code>.rules</code>) com todas as suas regras atuais do iptables, que você pode usar para restaurar o estado do seu firewall mais tarde.</p>
+					</div>
+					<div class="action-button-container">
+						<button id="download-backup" class="primary-button"><i class="fa fa-download"></i> Gerar e Baixar Backup</button>
+					</div>
+				</div>
+				
+				<div class="section-divider"></div>
+				
+				<!-- Seção de Restauração -->
+				<div class="restore-section">
+					<h3>Restaurar de um Arquivo</h3>
+					<div class="restore-description">
+						<p>Selecione um arquivo de backup para restaurar as regras.</p>
+					</div>
+					<form id="restore-form" enctype="multipart/form-data">
+						<div class="file-input-container">
+							<label for="restore-file-input" class="file-input-label">
+								<span class="file-input-text">Selecionar arquivo de backup</span>
+							</label>
+							<input type="file" id="restore-file-input" name="rulesFile" accept=".rules" class="file-input">
+							<div id="file-name-display" class="file-name-display">Nenhum arquivo selecionado</div>
+						</div>
+						<div class="action-button-container">
+							<button type="submit" id="upload-restore" class="primary-button"><i class="fa fa-upload"></i> Restaurar Regras</button>
+						</div>
+					</form>
+				</div>
+			</div>
 		</div>
 
 		<!-- Janela Modal para Mover Bloco de Regras -->

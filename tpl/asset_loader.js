@@ -5,7 +5,8 @@
     const assets = {
         css: [
             'jquery-ui.css',
-            'theme/Silver.css'
+            'theme/Silver.css',
+            'backup-modal.css'
         ],
         js: [
             'jquery.min.js',

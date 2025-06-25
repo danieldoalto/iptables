@@ -285,8 +285,16 @@ module.exports = {
 			});
 		}
 		else {
-			res.writeHead(301, {"Location": "auth.html", "Cache-Control": "no-cache"});
-			res.end();
+			// Corrigir o redirecionamento para a página de autenticação
+			fs.readFile('./tpl/auth.html', function(err, data) {
+				if (err) {
+					res.writeHead(500);
+					res.end('Erro ao carregar página de autenticação: ' + err);
+					return;
+				}
+				res.writeHead(200, {"Content-Type": "text/html", "Cache-Control": "no-cache"});
+				res.end(data);
+			});
 		}
 	},
 	
@@ -297,29 +305,32 @@ module.exports = {
 	 */
 	isAuth: function(req) {
 		var ip = req.connection.remoteAddress;
-		return module.exports.auth || module.exports.authUsers[ip];
+		// Se a senha não estiver definida, a autenticação não é necessária
+		if (module.exports.auth) {
+			return true;
+		}
+		return module.exports.authUsers[ip];
 	},
-	
+
 	/**
+	 * Verifica se um usuário está autenticado, baseado no IP da requisição.
 	 * Rota: /logout
 	 * Desconecta o usuário removendo seu IP da lista de usuários autenticados e redireciona para a página de login.
 	 */
 	logout: function(req, res) {
 		var ip = req.connection.remoteAddress;
 		module.exports.authUsers[ip] = 0;
-		res.writeHead(301, {"Location": "auth.html", "Cache-Control": "no-cache"});
-		res.end();
-	},
-	
-	/**
-	 * Rota: /user_list (Aparentemente para debug)
-	 * Lista os IPs dos usuários atualmente autenticados.
-	 */
-	userList: function(req, res) {
-		for(var ip in module.exports.authUsers) {
-			res.write("IP: " + ip + " " + (module.exports.authUsers[ip] ? "auth" : "none"));
-		}
-		res.end();
+		
+		// Corrigir o redirecionamento para a página de autenticação
+		fs.readFile('./tpl/auth.html', function(err, data) {
+			if (err) {
+				res.writeHead(500);
+				res.end('Erro ao carregar página de autenticação: ' + err);
+				return;
+			}
+			res.writeHead(200, {"Content-Type": "text/html", "Cache-Control": "no-cache"});
+			res.end(data);
+		});
 	}
 };
 

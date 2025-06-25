@@ -43,15 +43,31 @@ http.createServer(function (req, res) {
     var pathname = url.parse(req.url).pathname;
     req.setEncoding("utf8");
 
+    // Permitir acesso a arquivos estáticos de tema e recursos necessários para a página de login
+    if (pathname.startsWith('/theme/') || 
+        pathname.startsWith('/img/') || 
+        pathname === '/jquery.min.js' || 
+        pathname === '/jquery-ui.css' || 
+        pathname === '/jquery-ui.min.js' ||
+        pathname === '/favicon.ico') {
+        serveStaticFile(res, pathname);
+        return;
+    }
+    
+    // Verificar autenticação para todas as rotas exceto /login
+    if (!handle.isAuth(req) && pathname !== '/login') {
+        // Servir diretamente a página de login
+        serveStaticFile(res, '/auth.html');
+        return;
+    }
+    
+    // Processar rotas normalmente quando autenticado
     if (handles[pathname]) {
-        if (handle.isAuth(req)) {
-            handles[pathname](req, res);
-        } else {
-            handle.authMe(req, res);
-        }
+        handles[pathname](req, res);
     } else {
         serveStaticFile(res, pathname);
     }
+
 }).listen(1337);
 console.log('Servidor HTTP rodando em http://*:1337/');
 
