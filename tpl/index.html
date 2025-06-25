@@ -168,11 +168,11 @@
 		<div id="backup-dialog" title="Backup & Restore de Regras" style="display:none;">
 			<div class="modal-container">
 				<!-- Seção de Backup -->
-				<div class="backup-section">
+				<div class="modal-section">
 					<h3>Fazer Backup</h3>
-					<div class="backup-description">
+					<div class="modal-description">
 						<p>Clique no botão abaixo para baixar um arquivo <code>.rules</code> com as regras atuais.</p>
-						<p class="small-text">Isso gerará um arquivo de backup (<code>.rules</code>) com todas as suas regras atuais do iptables, que você pode usar para restaurar o estado do seu firewall mais tarde.</p>
+						<p class="small-text">Isso gerará um arquivo de backup com todas as suas regras atuais do iptables, que você pode usar para restaurar o estado do seu firewall mais tarde.</p>
 					</div>
 					<div class="action-button-container">
 						<button id="download-backup" class="primary-button"><i class="fa fa-download"></i> Gerar e Baixar Backup</button>
@@ -182,9 +182,9 @@
 				<div class="section-divider"></div>
 				
 				<!-- Seção de Restauração -->
-				<div class="restore-section">
+				<div class="modal-section">
 					<h3>Restaurar de um Arquivo</h3>
-					<div class="restore-description">
+					<div class="modal-description">
 						<p>Selecione um arquivo de backup para restaurar as regras.</p>
 					</div>
 					<form id="restore-form" enctype="multipart/form-data">
@@ -205,30 +205,38 @@
 
 		<!-- Janela Modal para Mover Bloco de Regras -->
 		<div id="move-rule-dialog" title="Mover Bloco de Regras" style="display:none;">
-			<p>Selecione o intervalo de regras a ser movido e a posição de destino.</p>
-			<form>
-				<fieldset>
-					<label for="move-from-start">Regra Inicial (A):</label>
-					<input type="number" id="move-from-start" min="1" class="text ui-widget-content ui-corner-all">
-					<label for="move-from-end">Regra Final (B):</label>
-					<input type="number" id="move-from-end" min="1" class="text ui-widget-content ui-corner-all">
-					<label for="move-to-index">Posição de Destino (C):</label>
-					<input type="number" id="move-to-index" min="1" class="text ui-widget-content ui-corner-all">
-				</fieldset>
-			</form>
+			<div class="modal-container">
+				<div class="modal-section">
+					<p class="modal-description">Selecione o intervalo de regras a ser movido e a posição de destino.</p>
+					<form>
+						<fieldset>
+							<label for="move-from-start">Regra Inicial (A):</label>
+							<input type="number" id="move-from-start" min="1">
+							<label for="move-from-end">Regra Final (B):</label>
+							<input type="number" id="move-from-end" min="1">
+							<label for="move-to-index">Posição de Destino (C):</label>
+							<input type="number" id="move-to-index" min="1">
+						</fieldset>
+					</form>
+				</div>
+			</div>
 		</div>
 
 		<!-- Janela Modal para Confirmar Movimentação de Regras -->
 		<div id="move-confirm-dialog" title="Confirmar Movimentação de Regras" style="display:none;">
-			<p>Por favor, revise as alterações. As regras serão modificadas conforme abaixo.</p>
-			<div style="display: flex; justify-content: space-between;">
-				<div style="width: 48%;">
-					<h4>Estado Atual</h4>
-					<textarea id="original-rules-preview" readonly style="width: 100%; height: 300px; font-family: monospace;"></textarea>
-				</div>
-				<div style="width: 48%;">
-					<h4>Novo Estado (Proposto)</h4>
-					<textarea id="new-rules-preview" readonly style="width: 100%; height: 300px; font-family: monospace;"></textarea>
+			<div class="modal-container">
+				<div class="modal-section">
+					<p class="modal-description">Por favor, revise as alterações. As regras serão modificadas conforme abaixo.</p>
+					<div style="display: flex; justify-content: space-between;">
+						<div class="preview-pane">
+							<h3>Estado Atual</h3>
+							<textarea id="original-rules-preview" readonly></textarea>
+					</div>
+						<div class="preview-pane">
+							<h3>Novo Estado (Proposto)</h3>
+							<textarea id="new-rules-preview" readonly></textarea>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>

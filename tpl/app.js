@@ -13,37 +13,39 @@ const app = {
             height: "auto",
             width: 800,
             modal: true,
-            buttons: {
-                "Confirmar e Aplicar": function() {
-                    $.ajax({
-                        type: 'POST',
-                        url: '/moveRulesBlock',
-                        data: {
-                            table: moveParams.table, // Usa os valores armazenados em moveParams
-                            chain: moveParams.chain, // Usa os valores armazenados em moveParams
-                            start: moveParams.start,
-                            end: moveParams.end,
-                            targetIndex: moveParams.targetIndex
-                        },
-                        dataType: 'json',
-                        success: function(response) {
-                            if (response.success) {
-                                showInfo("Bloco de regras movido com sucesso!");
-                                rules.showList(moveParams.chain, moveParams.table);
-                                $(confirmDialog).dialog("close");
-                            } else {
-                                showError("Falha ao aplicar as regras: " + response.error);
+            buttons: [
+                {
+                    text: "Confirmar e Aplicar",
+                    click: function() {
+                        $.ajax({
+                            type: 'POST',
+                            url: '/moveRulesBlock',
+                            data: moveParams,
+                            dataType: 'json',
+                            success: function(response) {
+                                if (response.success) {
+                                    showInfo("Bloco de regras movido com sucesso!");
+                                    rules.showList(moveParams.chain, moveParams.table);
+                                    $(confirmDialog).dialog("close");
+                                } else {
+                                    showError("Falha ao aplicar as regras: " + response.error);
+                                }
+                            },
+                            error: function() {
+                                showError("Erro de comunicação ao tentar aplicar as regras.");
                             }
-                        },
-                        error: function() {
-                            showError("Erro de comunicação ao tentar aplicar as regras.");
-                        }
-                    });
+                        });
+                    },
+                    class: 'primary-button'
                 },
-                "Cancelar": function() {
-                    $(this).dialog("close");
+                {
+                    text: "Cancelar",
+                    click: function() {
+                        $(this).dialog("close");
+                    },
+                    class: 'secondary-button'
                 }
-            }
+            ]
         });
 
         $("#move-rule-dialog").dialog({
@@ -51,47 +53,54 @@ const app = {
             height: "auto",
             width: 400,
             modal: true,
-            buttons: {
-                "Pré-visualizar Mudanças": function() {
-                    const start = $('#move-from-start').val();
-                    const end = $('#move-from-end').val();
-                    const targetIndex = $('#move-to-index').val();
-                    const table = rules.currentTable;
-                    const chain = rules.currentChain;
-                    console.log(`[Debug] Move modal read state: table='${table}', chain='${chain}'`);
+            buttons: [
+                {
+                    text: "Pré-visualizar Mudanças",
+                    click: function() {
+                        const start = $('#move-from-start').val();
+                        const end = $('#move-from-end').val();
+                        const targetIndex = $('#move-to-index').val();
+                        const table = rules.currentTable;
+                        const chain = rules.currentChain;
 
-                    if (!start || !end || !targetIndex) {
-                        showError("Todos os campos são obrigatórios.");
-                        return;
-                    }
-
-                    moveParams = { table, chain, start, end, targetIndex };
-                    const initialModal = $(this);
-
-                    $.ajax({
-                        type: 'POST',
-                        url: '/previewMoveRules',
-                        data: moveParams,
-                        dataType: 'json',
-                        success: function(response) {
-                            if (response.success) {
-                                $('#original-rules-preview').val(response.oldRules);
-                                $('#new-rules-preview').val(response.newRules);
-                                confirmDialog.dialog("open");
-                                initialModal.dialog("close");
-                            } else {
-                                showError("Falha ao gerar pré-visualização: " + response.error);
-                            }
-                        },
-                        error: function() {
-                            showError("Erro de comunicação ao gerar pré-visualização.");
+                        if (!start || !end || !targetIndex) {
+                            showError("Todos os campos são obrigatórios.");
+                            return;
                         }
-                    });
+
+                        moveParams = { table, chain, start, end, targetIndex };
+                        const initialModal = $(this);
+
+                        $.ajax({
+                            type: 'POST',
+                            url: '/previewMoveRules',
+                            data: moveParams,
+                            dataType: 'json',
+                            success: function(response) {
+                                if (response.success) {
+                                    $('#original-rules-preview').val(response.oldRules);
+                                    $('#new-rules-preview').val(response.newRules);
+                                    confirmDialog.dialog("open");
+                                    initialModal.dialog("close");
+                                } else {
+                                    showError("Falha ao gerar pré-visualização: " + response.error);
+                                }
+                            },
+                            error: function() {
+                                showError("Erro de comunicação ao gerar pré-visualização.");
+                            }
+                        });
+                    },
+                    class: 'primary-button'
                 },
-                "Cancelar": function() {
-                    $(this).dialog("close");
+                {
+                    text: "Cancelar",
+                    click: function() {
+                        $(this).dialog("close");
+                    },
+                    class: 'secondary-button'
                 }
-            }
+            ]
         });
     },
 

@@ -1,22 +1,19 @@
-/* Estilos para a Modal de Backup e Restauração */
+/* Estilos Genéricos para Modais */
 .modal-container {
   padding: 5px;
   color: white;
   font-size: 12px;
 }
 
-/* Seções */
-.backup-section,
-.restore-section {
-  padding: 5px;
+.modal-section {
+  padding: 15px;
   background-color: #444;
   border: 1px solid #111111;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
+  border-radius: 3px;
 }
 
-/* Títulos */
-.backup-section h3,
-.restore-section h3 {
+.modal-section h3 {
   margin-top: 0;
   margin-bottom: 10px;
   color: white;
@@ -26,10 +23,11 @@
   font-weight: bold;
 }
 
-/* Descrições */
-.backup-description,
-.restore-description {
+.modal-description {
   margin-bottom: 15px;
+  font-size: 12px;
+  color: #ccc;
+  line-height: 1.4;
 }
 
 .small-text {
@@ -38,7 +36,6 @@
   font-style: italic;
 }
 
-/* Divisor de seções */
 .section-divider {
   height: 1px;
   background-color: #111111;
@@ -51,25 +48,31 @@
   margin: 10px 0;
 }
 
-.primary-button {
-  color: white;
-  padding: 5px 11px;
-  cursor: pointer;
-  border-radius: 5px;
-  background: -webkit-gradient(linear, 0 0, 0 100%, from(#444), to(#323232));
-  background: -moz-linear-gradient(top, #444, #323232);
-  background-image: -o-linear-gradient(top, #444, #323232);
-  background: -ms-linear-gradient(top, #444, #323232);
-  border: 1px solid #111111;
-  box-shadow: 0 0 5px #111;
-  font-size: 12px;
+/* Botão de Ação Principal (Confirmar, etc.) */
+.ui-dialog .ui-button.primary-button {
+  color: black !important;
+  font-weight: bold; /* Dar mais destaque */
+  border: 1px solid #999;
+  background: -webkit-gradient(linear, 0 0, 0 100%, from(#dcdcdc), to(#c0c0c0));
+  background: -moz-linear-gradient(top, #dcdcdc, #c0c0c0);
 }
 
-.primary-button:hover {
-  background: -webkit-gradient(linear, 0 0, 0 100%, from(#565656), to(#444444));
-  background: -moz-linear-gradient(top, #565656, #444444);
-  background-image: -o-linear-gradient(top, #565656, #444444);
-  background: -ms-linear-gradient(top, #565656, #444444);
+.ui-dialog .ui-button.primary-button:hover {
+  background: -webkit-gradient(linear, 0 0, 0 100%, from(white), to(#d3d3d3));
+  background: -moz-linear-gradient(top, white, #d3d3d3);
+}
+
+/* Botão de Ação Secundária (Cancelar) */
+.ui-dialog .ui-button.secondary-button {
+  color: black !important;
+  border: 1px solid #bbbbbb;
+  background: -webkit-gradient(linear, 0 0, 0 100%, from(#eee), to(gainsboro));
+  background: -moz-linear-gradient(top, #eee, gainsboro);
+}
+
+.ui-dialog .ui-button.secondary-button:hover {
+  background: -webkit-gradient(linear, 0 0, 0 100%, from(white), to(#eeeeee));
+  background: -moz-linear-gradient(top, white, #eeeeee);
 }
 
 /* Input de arquivo */
@@ -80,7 +83,6 @@
 }
 
 .file-input {
-  /* Técnica moderna para esconder o input, mantendo-o acessível */
   position: absolute;
   width: 1px;
   height: 1px;
@@ -88,7 +90,7 @@
   margin: -1px;
   overflow: hidden;
   clip: rect(0, 0, 0, 0);
-  white-space: nowrap; /* Adicionado para consistência */
+  white-space: nowrap;
   border: 0;
 }
 
@@ -102,8 +104,6 @@
   border-radius: 5px;
   background: -webkit-gradient(linear, 0 0, 0 100%, from(#444), to(#323232));
   background: -moz-linear-gradient(top, #444, #323232);
-  background-image: -o-linear-gradient(top, #444, #323232);
-  background: -ms-linear-gradient(top, #444, #323232);
   border: 1px solid #111111;
   box-shadow: 0 0 5px #111;
   font-size: 12px;
@@ -112,8 +112,6 @@
 .file-input-label:hover {
   background: -webkit-gradient(linear, 0 0, 0 100%, from(#565656), to(#444444));
   background: -moz-linear-gradient(top, #565656, #444444);
-  background-image: -o-linear-gradient(top, #565656, #444444);
-  background: -ms-linear-gradient(top, #565656, #444444);
 }
 
 .file-name-display {
@@ -124,6 +122,45 @@
   font-style: italic;
   color: #8e8eda;
   font-size: 11px;
+}
+
+/* Forms dentro de modais */
+.modal-section form label {
+  display: block;
+  margin: 10px 0 5px;
+  font-weight: bold;
+  color: #eee;
+}
+
+.modal-section form input[type="number"],
+.modal-section form input[type="text"] {
+  width: 95%;
+  padding: 8px;
+  border: 1px solid #111;
+  background-color: #2b2b2b;
+  color: #fff;
+  border-radius: 3px;
+}
+
+/* Preview Pane para confirmação */
+.preview-pane {
+    width: 48%;
+}
+
+.preview-pane h3 {
+    margin-top: 0;
+    font-size: 13px;
+}
+
+.preview-pane textarea {
+    width: 100%;
+    height: 300px;
+    font-family: monospace;
+    background-color: #2b2b2b;
+    border: 1px solid #111;
+    color: #eee;
+    padding: 5px;
+    box-sizing: border-box;
 }
 
 /* Código para compatibilidade com o tema */
@@ -137,12 +174,15 @@
 
 /* Responsividade */
 @media (max-width: 600px) {
-  .file-input-container {
+  .file-input-container,
+  .preview-pane {
     flex-direction: column;
+    width: 100%;
   }
   
   .file-input-label,
-  .primary-button {
+  .primary-button,
+  .secondary-button {
     width: 100%;
     margin-bottom: 8px;
   }
