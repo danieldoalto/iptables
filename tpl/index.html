@@ -5,15 +5,10 @@
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 
-		<link rel="stylesheet" href="jquery-ui.css" type="text/css"/>
-		<link rel="stylesheet" id="theme" href="theme/Silver.css" type="text/css"/>
-
-		<script type="text/javascript" src="jquery.min.js"></script> 
-		<script type="text/javascript" src="jquery-ui.min.js"></script> 
-		<script type="text/javascript" src="template.js"></script>
-		<script type="text/javascript" src="tools.js"></script>
-		<script type="text/javascript" src="client.js"></script>
-		<script type="text/javascript" src="app.js"></script>
+		<!-- Carrega a configuração da aplicação -->
+		<script type="text/javascript" src="config.js"></script>
+		<!-- Carrega dinamicamente os assets (CSS e JS) com base na configuração -->
+		<script type="text/javascript" src="asset_loader.js"></script>
 
 		<title>iptables</title>
 	</head>
@@ -87,6 +82,8 @@
 				<a class="button" onclick="tools.load();" title="Load rules from file">Load <img class="icon" src="/img/load.png"/></a>
 				<a class="button" onclick="tools.save();" title="Save rules into file">Save <img class="icon" src="/img/save.png"/></a>
 				<a class="button" onclick="tools.settingsDlg();" title="Show settings dialog">Settings <img class="icon" src="/img/settings.png"/></a>
+				<a class="button" onclick="app.moveRule();" title="Move a rule to a different position">Move <img class="icon" src="/img/edit.png"/></a>
+				<a class="button" onclick="app.backup();" title="Create a backup of the current rules">Backup <img class="icon" src="/img/save.png"/></a>
 				<a class="button" onclick="rules.resetCounters();" title="Reset counters for current chain">Reset <img class="icon" src="/img/reset.png"/></a>
 			</div>
 
@@ -167,6 +164,15 @@
 			</div>
 		</div>
 
-	</body>
+		<!-- Janela Modal para Backup e Restore -->
+		<div id="backup-dialog" title="Backup & Restore de Regras" style="display:none;">
+			<p><b>Fazer Backup</b></p>
+			<p>Clique no botão "Gerar Backup" para baixar um arquivo com as regras atuais.</p>
+			<hr style="margin: 15px 0;">
+			<p><b>Recuperar Backup</b></p>
+			<p>Selecione um arquivo de backup para restaurar as regras. <br/><b>Atenção:</b> Isto substituirá todas as regras existentes.</p>
+			<input type="file" id="restore-file-input" accept=".rules,.txt" style="width: 100%;"/>
+		</div>
 
+	</body>
 </html>

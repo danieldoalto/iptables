@@ -1,173 +1,138 @@
 // Módulos necessários
-var http = require('http');        // Módulo HTTP para criar o servidor web
-var handle = require('./handlers'); // Módulo personalizado com os manipuladores de requisições
-var handle_ext = require('./handlers_ext'); // Extensão para novos manipuladores
-var url = require("url");          // Módulo para manipulação de URLs
-var fs = require("fs");            // Módulo para manipulação de arquivos
+var http = require('http');
+var url = require('url');
+var fs = require('fs');
+var path = require('path');
+var proc = require('child_process');
+var ws = require('nodejs-websocket');
 
-// Mapeamento de rotas para seus respectivos manipuladores
+// Módulos de manipuladores de rota
+var handle = require('./handlers');
+var handle_ext = require('./handlers_ext');
+
+// --- Configuração de Rotas ---
 var handles = {};
-handles["/"] = handle.index;             // Página inicial
-handles["/channel"] = handle.showChannel;  // Exibe canais/regras
-handles["/delete"] = handle.deleteRule;    // Remove regras
-handles["/insert"] = handle.insertRule;    // Adiciona regras
-handles["/mon"] = handle.monitor;         // Monitoramento
-handles["/save"] = handle.save;           // Salva configurações
-handles["/load"] = handle.load;           // Carrega configurações
-handles["/settings"] = handle.settings;    // Configurações do sistema
-handles["/chainlist"] = handle.chainList;  // Lista de cadeias
-handles["/login"] = handle.authMe;         // Autenticação
-handles["/logout"] = handle.logout;        // Logout
-handles["/users"] = handle.userList;       // Gerenciamento de usuários
 
-// Mescla os manipuladores do arquivo de extensão com os principais
+// Adiciona rotas do handlers.js
+handles["/"] = handle.index;
+handles["/channel"] = handle.showChannel;
+handles["/delete"] = handle.deleteRule;
+handles["/insert"] = handle.insertRule;
+handles["/mon"] = handle.monitor;
+handles["/save"] = handle.save;
+handles["/load"] = handle.load;
+handles["/settings"] = handle.settings;
+handles["/chainlist"] = handle.chainList;
+handles["/login"] = handle.authMe;
+handles["/logout"] = handle.logout;
+handles["/users"] = handle.userList;
+
+// Adiciona rotas do handlers_ext.js
 for (var key in handle_ext) {
-    if (handle_ext.hasOwnProperty(key)) {
-        handles[key] = handle_ext[key];
+    if (typeof handle_ext[key] === 'function') {
+        handles["/" + key] = handle_ext[key];
     }
 }
 
-// Cria o servidor HTTP
-http.createServer(function handler(req, res) {
-    // Extrai o caminho da URL
+// Log de diagnóstico para verificar as rotas carregadas
+console.log("Rotas carregadas:");
+console.log(Object.keys(handles));
+
+// --- Servidor HTTP ---
+http.createServer(function (req, res) {
     var pathname = url.parse(req.url).pathname;
-    
-    // Configura a codificação da requisição
     req.setEncoding("utf8");
-    
-    // Verifica se existe um manipulador para a rota solicitada
+
     if (handles[pathname]) {
-        // Verifica autenticação antes de processar a requisição
-        if(handle.isAuth(req)) {
-            // Usuário autenticado, chama o manipulador da rota
+        if (handle.isAuth(req)) {
             handles[pathname](req, res);
-        }
-        else {
-            // Redireciona para a página de login se não estiver autenticado
+        } else {
             handle.authMe(req, res);
         }
+    } else {
+        serveStaticFile(res, pathname);
     }
-    else {
-		// Se não for uma rota de API, tenta servir um arquivo estático
-		var file = "./tpl" + pathname;
-		
-		// Verifica se o arquivo existe
-		fs.exists(file, function(ex) {
-			if(ex) {
-				// Lê e envia o arquivo solicitado
-				fs.readFile(file, [], function(err, data) {
-					//res.writeHead(320, {"Content-Type": "text/plain"});
-					res.end(data);
-				});
-			}
-			else {
-				// Arquivo não encontrado, retorna 404
-				console.log("No request handler found for " + pathname);
-				res.writeHead(404, {"Content-Type": "text/plain"});
-				res.write("404 Not found");
-				res.end();
-			}
-		});
-    }
-// Inicia o servidor HTTP na porta 1337
 }).listen(1337);
-console.log('Server running at http://*:1337/');
+console.log('Servidor HTTP rodando em http://*:1337/');
 
+function serveStaticFile(res, pathname) {
+    var file = "./tpl" + (pathname === '/' ? '/index.html' : pathname);
 
-/**
- * Configuração do WebSocket para comunicação em tempo real
- * Permite monitoramento de logs e captura de pacotes
- */
-var proc = require('child_process');  // Para executar processos do sistema
-var ws = require("nodejs-websocket");  // Biblioteca WebSocket
-var log = null;    // Referência ao processo de log
-var dump = null;   // Referência ao processo de dump de pacotes
+    const mimeTypes = {
+        '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css',
+        '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpg',
+        '.gif': 'image/gif', '.svg': 'image/svg+xml', '.wav': 'audio/wav',
+        '.mp4': 'video/mp4', '.woff': 'application/font-woff', '.ttf': 'application/font-ttf',
+        '.eot': 'application/vnd.ms-fontobject', '.otf': 'application/font-otf', '.wasm': 'application/wasm'
+    };
 
-/**
- * Encerra o processo de monitoramento de logs
- */
-function closeLogs() {
-	if(log) {
-		log.kill('SIGHUP');  // Envia sinal de encerramento
-		log = null;         // Limpa a referência
-	}
-}
-
-/**
- * Encerra o processo de captura de pacotes
- */
-function closeDump() {
-	if(dump) {
-		dump.kill('SIGHUP');  // Envia sinal de encerramento
-		dump = null;         // Limpa a referência
-	}
-}
-
-// Cria o servidor WebSocket na porta 8001
-var server = ws.createServer(function (conn) {
-	// Evento disparado quando uma mensagem é recebida
-	conn.on("text", function (data) {
-		// Converte a mensagem JSON para objeto
-		var params = JSON.parse(data);
-		// Monitora o arquivo de log do sistema
-		if(params.name == "syslog") {
-			// Inicia o comando 'tail -f' para monitorar o arquivo de log em tempo real
-			log = proc.spawn("tail", ["-f", "/var/log/syslog"]);
-			
-			// Evento disparado quando há novas linhas no log
-			log.stdout.on('data', function (lines) {
-				// Formata os dados para envio ao cliente
-				var outData = {name: params.name, data: lines.toString().split("\n")};
-				if(log)
-					// Envia os dados para o cliente via WebSocket
-					conn.sendText(JSON.stringify(outData));
-			});
-		}
-		// Captura pacotes de rede usando tcpdump
-		else if(params.name == "dump") {
-			// Configura os argumentos básicos do tcpdump
-			var args = ["-i", params.eth, "-n", "-l"];  // -i: interface, -n: não resolve nomes, -l: saída em tempo real
-			
-			// Adiciona filtros conforme os parâmetros fornecidos
-			if(params.port)
-				args.push("port", params.port);  // Filtra por porta
-			if(params.src)
-				args.push("src", params.src);    // Filtra por IP de origem
-			if(params.dst) {
-				if(params.src)
-					args.push("or");  // Adiciona operador OR se houver origem e destino
-				args.push("dst", params.dst);    // Filtra por IP de destino
-			}
-			
-			// Informa ao cliente que o dump foi iniciado
-			conn.sendText(JSON.stringify({name: params.name, data: ["Exec tcpdump with args: " + args.toString()]}));
-			
-			// Inicia o processo tcpdump
-			dump = proc.spawn("tcpdump", args);
-			
-			// Evento disparado quando há novos pacotes capturados
-			dump.stdout.on('data', function (lines) {
-				// Formata os dados para envio ao cliente
-				var outData = {name: params.name, data: lines.toString().split("\n")};
-				if(dump)
-					// Envia os dados para o cliente via WebSocket
-					conn.sendText(JSON.stringify(outData));
-			});
-		}
-		// Encerra o monitoramento de logs
-		else if(params.name == "closelog") {
-			closeLogs();
-		}
-		// Encerra a captura de pacotes
-		else if(params.name == "closedump") {
-			closeDump();
-		}
+    fs.readFile(file, function(error, content) {
+        if (error) {
+            if (error.code == 'ENOENT') {
+                console.log("Arquivo estático não encontrado: " + pathname);
+                res.writeHead(404, { "Content-Type": "text/plain" });
+                res.write("404 Not found");
+                res.end();
+            } else {
+                res.writeHead(500);
+                res.end('Erro no servidor: ' + error.code);
+            }
+        } else {
+            var extname = path.extname(file);
+            var contentType = mimeTypes[extname] || 'application/octet-stream';
+            res.writeHead(200, { 'Content-Type': contentType });
+            res.end(content, 'utf-8');
+        }
     });
-	// Evento disparado quando a conexão é fechada
-	conn.on("close", function (code, reason) {
-		// Garante que todos os processos sejam encerrados
-		closeLogs();
-		closeDump();
-	});
-// Inicia o servidor WebSocket na porta 8001
+}
+
+// --- Servidor WebSocket ---
+var log = null;
+var dump = null;
+
+function closeLogs() {
+    if (log) { log.kill('SIGHUP'); log = null; }
+}
+
+function closeDump() {
+    if (dump) { dump.kill('SIGHUP'); dump = null; }
+}
+
+ws.createServer(function (conn) {
+    conn.on("text", function (data) {
+        var params = JSON.parse(data);
+        switch (params.name) {
+            case "syslog":
+                log = proc.spawn("tail", ["-f", "/var/log/syslog"]);
+                log.stdout.on('data', function (lines) {
+                    if (log) conn.sendText(JSON.stringify({ name: params.name, data: lines.toString().split("\n") }));
+                });
+                break;
+            case "dump":
+                var args = ["-i", params.eth, "-n", "-l"];
+                if (params.port) args.push("port", params.port);
+                if (params.src) args.push("src", params.src);
+                if (params.dst) {
+                    if (params.src) args.push("or");
+                    args.push("dst", params.dst);
+                }
+                conn.sendText(JSON.stringify({ name: params.name, data: ["Exec tcpdump with args: " + args.toString()] }));
+                dump = proc.spawn("tcpdump", args);
+                dump.stdout.on('data', function (lines) {
+                    if (dump) conn.sendText(JSON.stringify({ name: params.name, data: lines.toString().split("\n") }));
+                });
+                break;
+            case "closelog":
+                closeLogs();
+                break;
+            case "closedump":
+                closeDump();
+                break;
+        }
+    });
+    conn.on("close", function () {
+        closeLogs();
+        closeDump();
+    });
 }).listen(8001);
+console.log('Servidor WebSocket rodando na porta 8001');
