@@ -47,9 +47,8 @@ O iptables Manager é uma aplicação web para gerenciar regras de firewall ipta
 - Atualização em tempo real via WebSocket
 
 ### Autenticação
-- Sistema de login/logout
-- Controle de acesso baseado em usuários
-- Gerenciamento de usuários
+- **Sistema de Sessão Segura**: A autenticação foi refatorada para usar sessões baseadas em cookies (`HttpOnly`), garantindo que cada login seja único e seguro, em vez do antigo sistema baseado em IP.
+- **Login/Logout**: Fluxo padrão de autenticação com geração de ID de sessão único no login e invalidação no logout.
 
 ## Estrutura do Código
 
@@ -69,7 +68,7 @@ O servidor principal que gerencia:
 Este arquivo é o coração do backend. Ele exporta um módulo que contém todos os manipuladores de rota (route handlers) para as requisições HTTP. Suas principais responsabilidades são:
 - **Executar Comandos `iptables`**: Funções como `showChannel`, `deleteRule`, e `insertRule` interagem diretamente com o sistema para listar, apagar e adicionar regras.
 - **Gerenciamento de Configurações**: As funções `loadSettings` e `saveSettings` cuidam da persistência das configurações do usuário em um arquivo JSON.
-- **Autenticação**: Gerencia o login (`authMe`), logout (`logout`) e a verificação de sessão (`isAuth`) dos usuários.
+- **Autenticação**: Gerencia o login (`authMe`), logout (`logout`) e a verificação de sessão (`isAuth`). O sistema foi refatorado para abandonar a verificação por IP e adotar um mecanismo seguro de sessão com cookies `HttpOnly`, gerando um ID de sessão único para cada cliente.
 
 ### client.js
 Lógica do lado do cliente que gerencia toda a interatividade da interface. É dividido em três objetos principais:
@@ -117,6 +116,7 @@ Essa abordagem mantém o código original o mais intacto possível, facilitando 
   - `url`
   - `fs`
   - `child_process`
+  - `crypto`
 
 ## Segurança
 - Autenticação necessária para acessar as funcionalidades
@@ -140,6 +140,15 @@ Essa abordagem mantém o código original o mais intacto possível, facilitando 
 - **Implementada funcionalidade de Backup e Restauração**:
   - **Backend**: Adicionadas as rotas `/backupRules` e `/restoreRules` em `handlers_ext.js` para gerar e restaurar backups utilizando `iptables-save` e `iptables-restore`.
   - **Frontend**: Criada uma janela modal em `index.html` e a lógica de interação em `tpl/app.js` para permitir que o usuário baixe e envie arquivos de backup.
+
+- **Unificação da Interface das Modais**:
+  - **CSS**: Refatoração completa dos estilos das janelas modais (`backup-modal.css`) para criar um design unificado e consistente, alinhado com o tema principal da aplicação.
+  - **Contraste e Acessibilidade**: Melhorado o contraste dos botões e textos, garantindo melhor legibilidade.
+  - **HTML e JS**: Atualizados os arquivos `index.html` e `app.js` para aplicar as novas classes de estilo de forma consistente em todas as modais (Backup/Restore, Mover Regras).
+
+- **Refatoração do Sistema de Autenticação**:
+  - **Segurança**: O sistema de autenticação, que era baseado em IP, foi substituído por um mecanismo de sessão segura com cookies `HttpOnly`.
+  - **Sessões Únicas**: Cada login agora gera um ID de sessão único, permitindo que múltiplos clientes se autentiquem de forma independente, mesmo que compartilhem o mesmo IP.
 
 
 ## Próximos Passos
