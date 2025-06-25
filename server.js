@@ -1,9 +1,19 @@
+// Módulos necessários
 var http = require('http');
-var handle = require('./handlers');
-var url = require("url");
-var fs = require("fs");
+var url = require('url');
+var fs = require('fs');
+var path = require('path');
+var proc = require('child_process');
+var ws = require('nodejs-websocket');
 
+// Módulos de manipuladores de rota
+var handle = require('./handlers');
+var handle_ext = require('./handlers_ext');
+
+// --- Configuração de Rotas ---
 var handles = {};
+
+// Adiciona rotas do handlers.js
 handles["/"] = handle.index;
 handles["/channel"] = handle.showChannel;
 handles["/delete"] = handle.deleteRule;
@@ -17,100 +27,128 @@ handles["/login"] = handle.authMe;
 handles["/logout"] = handle.logout;
 handles["/users"] = handle.userList;
 
-http.createServer(function handler(req, res) {
+// Adiciona rotas do handlers_ext.js
+for (var key in handle_ext) {
+    if (typeof handle_ext[key] === 'function') {
+        handles["/" + key] = handle_ext[key];
+    }
+}
+
+// Log de diagnóstico para verificar as rotas carregadas
+console.log("Rotas carregadas:");
+console.log(Object.keys(handles));
+
+// --- Servidor HTTP ---
+http.createServer(function (req, res) {
     var pathname = url.parse(req.url).pathname;
-    
     req.setEncoding("utf8");
+
+    // Permitir acesso a arquivos estáticos de tema e recursos necessários para a página de login
+    if (pathname.startsWith('/theme/') || 
+        pathname.startsWith('/img/') || 
+        pathname === '/jquery.min.js' || 
+        pathname === '/jquery-ui.css' || 
+        pathname === '/jquery-ui.min.js' ||
+        pathname === '/favicon.ico') {
+        serveStaticFile(res, pathname);
+        return;
+    }
     
+    // Verificar autenticação para todas as rotas exceto /login
+    if (!handle.isAuth(req) && pathname !== '/login') {
+        // Servir diretamente a página de login
+        serveStaticFile(res, '/auth.html');
+        return;
+    }
+    
+    // Processar rotas normalmente quando autenticado
     if (handles[pathname]) {
-        if(handle.isAuth(req)) {
-			handles[pathname](req, res);
-		}
-		else {
-			handle.authMe(req, res);
-		}
+        handles[pathname](req, res);
+    } else {
+        serveStaticFile(res, pathname);
     }
-    else {
-		var file = "./tpl" + pathname;
-		
-		fs.exists(file, function(ex) {
-			if(ex) {
-				fs.readFile(file, [], function(err, data) {
-					//res.writeHead(320, {"Content-Type": "text/plain"});
-					res.end(data);
-				});
-			}
-			else {
-				console.log("No request handler found for " + pathname);
-				res.writeHead(404, {"Content-Type": "text/plain"});
-				res.write("404 Not found");
-				res.end();
-			}
-		});
-    }
+
 }).listen(1337);
-console.log('Server running at http://*:1337/');
+console.log('Servidor HTTP rodando em http://*:1337/');
 
+function serveStaticFile(res, pathname) {
+    var file = "./tpl" + (pathname === '/' ? '/index.html' : pathname);
 
-// ------------------ WebSocket ------------------------------------------------
-var proc = require('child_process');
-var ws = require("nodejs-websocket");
+    const mimeTypes = {
+        '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css',
+        '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpg',
+        '.gif': 'image/gif', '.svg': 'image/svg+xml', '.wav': 'audio/wav',
+        '.mp4': 'video/mp4', '.woff': 'application/font-woff', '.ttf': 'application/font-ttf',
+        '.eot': 'application/vnd.ms-fontobject', '.otf': 'application/font-otf', '.wasm': 'application/wasm'
+    };
+
+    fs.readFile(file, function(error, content) {
+        if (error) {
+            if (error.code == 'ENOENT') {
+                console.log("Arquivo estático não encontrado: " + pathname);
+                res.writeHead(404, { "Content-Type": "text/plain" });
+                res.write("404 Not found");
+                res.end();
+            } else {
+                res.writeHead(500);
+                res.end('Erro no servidor: ' + error.code);
+            }
+        } else {
+            var extname = path.extname(file);
+            var contentType = mimeTypes[extname] || 'application/octet-stream';
+            res.writeHead(200, { 'Content-Type': contentType });
+            res.end(content, 'utf-8');
+        }
+    });
+}
+
+// --- Servidor WebSocket ---
 var log = null;
 var dump = null;
 
 function closeLogs() {
-	if(log) {
-		log.kill('SIGHUP');
-		log = null;
-	}
+    if (log) { log.kill('SIGHUP'); log = null; }
 }
 
 function closeDump() {
-	if(dump) {
-		dump.kill('SIGHUP');
-		dump = null;
-	}
+    if (dump) { dump.kill('SIGHUP'); dump = null; }
 }
 
-var server = ws.createServer(function (conn) {
-	conn.on("text", function (data) {
-		var params = JSON.parse(data);
-		if(params.name == "syslog") {
-			log = proc.spawn("tail", ["-f", "/var/log/syslog"]);
-			log.stdout.on('data', function (lines) {
-				var outData = {name: params.name, data: lines.toString().split("\n")};
-				if(log)
-					conn.sendText(JSON.stringify(outData));
-			});
-		}
-		else if(params.name == "dump") {
-			var args = ["-i", params.eth, "-n", "-l"];
-			if(params.port)
-				args.push("port", params.port);
-			if(params.src)
-				args.push("src", params.src);
-			if(params.dst) {
-				if(params.src)
-					args.push("or");
-				args.push("dst", params.dst);
-			}
-			conn.sendText(JSON.stringify({name: params.name, data: ["Exec tcpdump with args: " + args.toString()]}));
-			dump = proc.spawn("tcpdump", args);
-			dump.stdout.on('data', function (lines) {
-				var outData = {name: params.name, data: lines.toString().split("\n")};
-				if(dump)
-					conn.sendText(JSON.stringify(outData));
-			});
-		}
-		else if(params.name == "closelog") {
-			closeLogs();
-		}
-		else if(params.name == "closedump") {
-			closeDump();
-		}
+ws.createServer(function (conn) {
+    conn.on("text", function (data) {
+        var params = JSON.parse(data);
+        switch (params.name) {
+            case "syslog":
+                log = proc.spawn("tail", ["-f", "/var/log/syslog"]);
+                log.stdout.on('data', function (lines) {
+                    if (log) conn.sendText(JSON.stringify({ name: params.name, data: lines.toString().split("\n") }));
+                });
+                break;
+            case "dump":
+                var args = ["-i", params.eth, "-n", "-l"];
+                if (params.port) args.push("port", params.port);
+                if (params.src) args.push("src", params.src);
+                if (params.dst) {
+                    if (params.src) args.push("or");
+                    args.push("dst", params.dst);
+                }
+                conn.sendText(JSON.stringify({ name: params.name, data: ["Exec tcpdump with args: " + args.toString()] }));
+                dump = proc.spawn("tcpdump", args);
+                dump.stdout.on('data', function (lines) {
+                    if (dump) conn.sendText(JSON.stringify({ name: params.name, data: lines.toString().split("\n") }));
+                });
+                break;
+            case "closelog":
+                closeLogs();
+                break;
+            case "closedump":
+                closeDump();
+                break;
+        }
     });
-	conn.on("close", function (code, reason) {
-		closeLogs();
-		closeDump();
-	});
+    conn.on("close", function () {
+        closeLogs();
+        closeDump();
+    });
 }).listen(8001);
+console.log('Servidor WebSocket rodando na porta 8001');

@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/puux/iptables.git"
+    "url": "git+https://github.com/danieldoalto/iptables.git"
   },
   "keywords": [
     "iptables",
@@ -19,9 +19,9 @@
   "author": "puux",
   "license": "GPL-2.0",
   "bugs": {
-    "url": "https://github.com/puux/iptables/issues"
+    "url": "https://github.com/danieldoalto/iptables/issues"
   },
-  "homepage": "https://github.com/puux/iptables#readme",
+  "homepage": "https://github.com/danieldoalto/iptables#readme",
   "dependencies": {
     "nodejs-websocket": "^1.7.1"
   }

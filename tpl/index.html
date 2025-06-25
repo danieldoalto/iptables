@@ -5,14 +5,10 @@
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 
-		<link rel="stylesheet" href="jquery-ui.css" type="text/css"/>
-		<link rel="stylesheet" id="theme" href="theme/Silver.css" type="text/css"/>
-
-		<script type="text/javascript" src="jquery.min.js"></script> 
-		<script type="text/javascript" src="jquery-ui.min.js"></script> 
-		<script type="text/javascript" src="template.js"></script>
-		<script type="text/javascript" src="tools.js"></script>
-		<script type="text/javascript" src="client.js"></script>
+		<!-- Carrega a configuração da aplicação -->
+		<script type="text/javascript" src="config.js"></script>
+		<!-- Carrega dinamicamente os assets (CSS e JS) com base na configuração -->
+		<script type="text/javascript" src="asset_loader.js"></script>
 
 		<title>iptables</title>
 	</head>
@@ -86,6 +82,8 @@
 				<a class="button" onclick="tools.load();" title="Load rules from file">Load <img class="icon" src="/img/load.png"/></a>
 				<a class="button" onclick="tools.save();" title="Save rules into file">Save <img class="icon" src="/img/save.png"/></a>
 				<a class="button" onclick="tools.settingsDlg();" title="Show settings dialog">Settings <img class="icon" src="/img/settings.png"/></a>
+				<a class="button" onclick="app.moveRule();" title="Move a rule to a different position">Move <img class="icon" src="/img/edit.png"/></a>
+				<a class="button" onclick="app.backup();" title="Create a backup of the current rules">Backup <img class="icon" src="/img/save.png"/></a>
 				<a class="button" onclick="rules.resetCounters();" title="Reset counters for current chain">Reset <img class="icon" src="/img/reset.png"/></a>
 			</div>
 
@@ -166,6 +164,82 @@
 			</div>
 		</div>
 
-	</body>
+		<!-- Janela Modal para Backup e Restore -->
+		<div id="backup-dialog" title="Backup & Restore de Regras" style="display:none;">
+			<div class="modal-container">
+				<!-- Seção de Backup -->
+				<div class="modal-section">
+					<h3>Fazer Backup</h3>
+					<div class="modal-description">
+						<p>Clique no botão abaixo para baixar um arquivo <code>.rules</code> com as regras atuais.</p>
+						<p class="small-text">Isso gerará um arquivo de backup com todas as suas regras atuais do iptables, que você pode usar para restaurar o estado do seu firewall mais tarde.</p>
+					</div>
+					<div class="action-button-container">
+						<button id="download-backup" class="primary-button"><i class="fa fa-download"></i> Gerar e Baixar Backup</button>
+					</div>
+				</div>
+				
+				<div class="section-divider"></div>
+				
+				<!-- Seção de Restauração -->
+				<div class="modal-section">
+					<h3>Restaurar de um Arquivo</h3>
+					<div class="modal-description">
+						<p>Selecione um arquivo de backup para restaurar as regras.</p>
+					</div>
+					<form id="restore-form" enctype="multipart/form-data">
+						<div class="file-input-container">
+							<label for="restore-file-input" class="file-input-label">
+								<span class="file-input-text">Selecionar arquivo de backup</span>
+							</label>
+							<input type="file" id="restore-file-input" name="rulesFile" accept=".rules" class="file-input">
+							<div id="file-name-display" class="file-name-display">Nenhum arquivo selecionado</div>
+						</div>
+						<div class="action-button-container">
+							<button type="submit" id="upload-restore" class="primary-button"><i class="fa fa-upload"></i> Restaurar Regras</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
 
+		<!-- Janela Modal para Mover Bloco de Regras -->
+		<div id="move-rule-dialog" title="Mover Bloco de Regras" style="display:none;">
+			<div class="modal-container">
+				<div class="modal-section">
+					<p class="modal-description">Selecione o intervalo de regras a ser movido e a posição de destino.</p>
+					<form>
+						<fieldset>
+							<label for="move-from-start">Regra Inicial (A):</label>
+							<input type="number" id="move-from-start" min="1">
+							<label for="move-from-end">Regra Final (B):</label>
+							<input type="number" id="move-from-end" min="1">
+							<label for="move-to-index">Posição de Destino (C):</label>
+							<input type="number" id="move-to-index" min="1">
+						</fieldset>
+					</form>
+				</div>
+			</div>
+		</div>
+
+		<!-- Janela Modal para Confirmar Movimentação de Regras -->
+		<div id="move-confirm-dialog" title="Confirmar Movimentação de Regras" style="display:none;">
+			<div class="modal-container">
+				<div class="modal-section">
+					<p class="modal-description">Por favor, revise as alterações. As regras serão modificadas conforme abaixo.</p>
+					<div style="display: flex; justify-content: space-between;">
+						<div class="preview-pane">
+							<h3>Estado Atual</h3>
+							<textarea id="original-rules-preview" readonly></textarea>
+					</div>
+						<div class="preview-pane">
+							<h3>Novo Estado (Proposto)</h3>
+							<textarea id="new-rules-preview" readonly></textarea>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+</body>
 </html>

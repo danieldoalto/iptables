@@ -1,6 +1,11 @@
+// Arquivo de utilidades e carregamento de configurações.
+
+// Objeto global para armazenar as configurações carregadas do servidor.
 _settings = {};
 
+// Ao carregar o documento, busca as configurações do servidor.
 $(document).ready(function(){
+	// Faz uma requisição GET para /settings para obter as configurações do usuário.
 	$.get("/settings", function(data){
 		_settings = JSON.parse(data);
         $(".param").each(function(index, obj){
@@ -40,12 +45,22 @@ $(document).ready(function(){
 	});
 });
 
+/**
+ * Exibe uma mensagem de erro para o usuário.
+ * A mensagem desaparece ao ser clicada.
+ * @param {string} text - O texto do erro a ser exibido.
+ */
 function showError(text) {
 	$(".error").html(text).fadeIn().click(function(){
 		$(this).fadeOut();
 	});
 }
 
+/**
+ * Exibe uma mensagem informativa para o usuário.
+ * A mensagem desaparece ao ser clicada.
+ * @param {string} text - O texto da informação a ser exibida.
+ */
 function showInfo(text) {
 	$(".info").html(text).fadeIn().click(function(){
 		$(this).fadeOut();

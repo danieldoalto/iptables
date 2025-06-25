@@ -1,11 +1,18 @@
-var channel = "";
-var table = "";
-var webSocket;
-var chainPath = [];
+// Arquivo de script do lado do cliente para o Iptables Manager
+// Lida com a interação do usuário, comunicação com o servidor e atualização da interface.
 
+// Variáveis globais para manter o estado da aplicação
+var channel = ""; // Chain (cadeia) atualmente selecionada
+var table = "";   // Tabela atualmente selecionada (filter, nat, mangle)
+var webSocket;    // Objeto WebSocket para comunicação em tempo real
+var chainPath = []; // Array para manter o histórico de navegação (breadcrumb)
+
+// Função principal executada quando o documento HTML está pronto
 $(document).ready(function(){
+	// Exibe a lista de regras para a chain 'input' na tabela 'filter' como padrão
 	rules.showListWithPath("input", "filter");
 	
+	// Obtém a lista de chains customizadas do servidor
 	$.get("/chainlist", function(data) {
 		var arr = JSON.parse(data);
 		$("#customchains").html("");
@@ -19,11 +26,16 @@ $(document).ready(function(){
 		$("#customchains").append(window.tpl.customChainAddNew);
 	});
 	
+	// Inicia o monitoramento das regras a cada 1 segundo para atualizar os contadores
 	setInterval(rules.monitor, 1000);
+	// Seleciona a primeira página de ferramentas/configurações por padrão
 	tools.selectPage(1);
+
 });
 
+// Lógica para os menus dropdown
 $(function () {
+	// Itera sobre cada elemento com a classe 'dropdown'
 	$('.dropdown').each(function () {
 		var id = 0;
 		$(this).parent().eq(0).hoverIntent({
@@ -59,8 +71,16 @@ $(function () {
 	});
 });
 
+/**
+ * Objeto 'parser'
+ * Contém métodos para processar e formatar os dados das regras recebidas do servidor.
+ */
 var parser = {
 	
+	/**
+	 * Processa a lista de regras (em formato JSON) e as exibe na tabela principal.
+	 * @param {string} data - String JSON contendo um array de regras.
+	 */
 	parseChannels: function (data) {
 		
 		this.editRuleRow = null;
@@ -81,12 +101,24 @@ var parser = {
 		$("#main").append('<tr class="newrulerow"><td colspan="3">New rule:</td><td colspan="1"><form onsubmit="return rules.insert();"><input type="text" id="rule" class="ruleeditor"/></form></td><td><a href="#" onclick="return tools.addDialogRule();" title="Add rule"><img src="/img/make.png"/></a></td></tr>');
 	},
 	
+	/**
+	 * Cria o HTML para uma única linha de regra na tabela.
+	 * @param {number} index - O índice da regra.
+	 * @param {string} text - O texto da regra.
+	 * @returns {string} - O HTML da linha da tabela (<tr>).
+	 */
 	makeRuleTpl: function (index, text) {
 		var ntext = this.makeRuleText(text);
 		return tpl.ruleRow(index, ntext);
 	},
 	
+	// Objeto para identificar regras finais que não levam a outras chains
 	FIN_RULES: {DROP:1, ACCEPT:1, LOG:1, TCPMSS:1, RETURN:1, DNAT:1, SNAT:1, MASQUERADE:1, CONNMARK:1, TOS:1, TTL:1},
+	/**
+	 * Formata o texto de uma regra com spans e classes para syntax highlighting.
+	 * @param {string} text - O texto original da regra.
+	 * @returns {string} - O texto da regra formatado com HTML.
+	 */
 	makeRuleText: function (text) {
 		text = text
 			// strings
@@ -123,9 +155,13 @@ var parser = {
 		return text;
 	},
 	
-	editRuleRow: null,
-	editRuleRowText: "",
-	editRuleRowIndex: "",
+	editRuleRow: null,      // Referência para a linha (<tr>) que está sendo editada
+	editRuleRowText: "",    // Conteúdo original da célula da regra antes da edição
+	editRuleRowIndex: "",   // Índice da regra que está sendo editada
+	/**
+	 * Manipula eventos de teclado (Enter, Esc) durante a edição de uma regra.
+	 * @param {number} key - O código da tecla pressionada.
+	 */
 	editRuleAction: function (key) {
 		if(key === 27) {
 			if(this.editRuleRow) {
@@ -141,6 +177,10 @@ var parser = {
 		}
 	},
 
+	/**
+	 * Ativa o modo de edição para uma regra específica na tabela.
+	 * @param {number} index - O índice da regra a ser editada.
+	 */
 	editRule: function (index) {
 		var rule = $("#rule" + index);
 		if(this.editRuleRow === null || rule.attr("id") !== this.editRuleRow.attr("id")) {
@@ -157,13 +197,27 @@ var parser = {
 		}
 	},
     
+    /**
+     * Finaliza o modo de edição, resetando as variáveis de estado.
+     */
     endEditRule: function() {
         this.editRuleRow = null;
     }
 	
 };
 
+/**
+ * Objeto 'rules'
+ * Contém métodos para gerenciar as regras de iptables (exibir, adicionar, remover, etc.).
+ */
 var rules = {
+	currentChain: null,
+	currentTable: null,
+	/**
+	 * Exibe a lista de regras para uma chain e tabela específicas.
+	 * @param {string} name - O nome da chain.
+	 * @param {string} chainTable - O nome da tabela.
+	 */
 	showList: function (name, chainTable) {
 		channel = name;
 		table = chainTable;
@@ -179,7 +233,17 @@ var rules = {
 		$.get("channel?c=" + channel + "&t=" + table, parser.parseChannels);
 	},
 
-	showListWithPath: function (name, chainTable, addPath) {
+	/**
+	 * Exibe a lista de regras e atualiza o caminho de navegação (breadcrumb).
+	 * @param {string} name - O nome da chain.
+	 * @param {string} chainTable - O nome da tabela.
+	 * @param {boolean} addPath - Se true, adiciona a chain ao caminho de navegação.
+	 */
+		showListWithPath: function (name, chainTable, addPath) {
+		this.currentChain = name;
+		this.currentTable = chainTable;
+		console.log(`[Debug] State updated: table='${this.currentTable}', chain='${this.currentChain}'`);
+
 		rules.showList(name, chainTable);
 
 		var obj = {chain: name.toUpperCase(), table: chainTable};
@@ -193,6 +257,9 @@ var rules = {
 		rules.updatePath();
 	},
 
+	/**
+	 * Atualiza o HTML do breadcrumb de navegação.
+	 */
 	updatePath: function() {
 		var code = "";
 		for(var o of chainPath) {
@@ -202,6 +269,10 @@ var rules = {
 		tools.setChainPath(code);
 	},
 
+	/**
+	 * Navega para uma chain anterior no breadcrumb.
+	 * @param {string} name - O nome da chain para a qual voltar.
+	 */
 	showBackPath: function (name) {
 		var index = 0;
 		for(var o of chainPath) {
@@ -215,19 +286,31 @@ var rules = {
 		rules.updatePath();
 	},
 	
+	/**
+	 * Remove uma regra.
+	 * @param {number} index - O índice da regra a ser removida.
+	 */
 	remove: function (index) {
 		$.get("delete?i=" + index + "&c=" + channel + "&t=" + table, parser.parseChannels);
 		return false;
 	},
 	
+	/**
+	 * Insere uma nova regra a partir do campo de texto principal.
+	 */
 	insert: function () {
 		this.insertText($("#rule").val());
 		
 		return false;
     },
     
+    /**
+	 * Envia o texto de uma regra para o servidor para ser inserida ou atualizada.
+	 * @param {string} text - O texto da regra.
+	 */
     insertText: function (text) {
-		if(text.search(/-[A|I|R]/g) === -1) {
+			// Se não for especificada uma ação (-A, -I, -R), assume -A (Append)
+			if(text.search(/-[A|I|R]/g) === -1) {
 			text = "-A " + channel.toLocaleUpperCase() + " " + text ;
 		}
 
@@ -260,6 +343,9 @@ var rules = {
 		return false;
 	},
 	
+	/**
+	 * Monitora os contadores de pacotes e bytes para a chain atual, atualizando a UI.
+	 */
 	monitor: function() {
 		$.get("/mon?c=" + channel + "&t=" + table, function(data){
 			var arr = JSON.parse(data);
@@ -285,6 +371,11 @@ var rules = {
 		});
 	},
 	
+	/**
+	 * Envia um pedido para criar uma nova chain customizada.
+	 * @param {string} name - Nome da nova chain.
+	 * @param {string} _table - Tabela à qual a chain pertence.
+	 */
 	addChainName: function(name, _table) {
 		channel = name;
 		table = _table;
@@ -302,6 +393,9 @@ var rules = {
 		});
 	},
 	
+	/**
+	 * Exibe o diálogo para adicionar uma nova chain customizada.
+	 */
 	addChain: function() {
 		$(".addchain").dialog({
 			title:"Create new chain",
@@ -320,6 +414,10 @@ var rules = {
 		});
 	},
 
+	/**
+	 * Remove uma chain customizada.
+	 * @param {object} obj - O elemento do link de remoção.
+	 */
 	removeChain: function(obj) {
 		var rName = $(obj).attr("chainname");
 		var rTable = $(obj).attr("chaintable");
@@ -337,6 +435,9 @@ var rules = {
 		});
 	},
 	
+	/**
+	 * Envia um pedido para zerar os contadores da chain atual.
+	 */
 	resetCounters: function() {
 		$.post("insert?t=" + table + "&c=" + channel, {rule: "-t " + table + " -Z " + channel.toUpperCase()}, function(data){
 			if(data) {
@@ -351,9 +452,16 @@ var rules = {
 	}
 };
 
+/**
+ * Objeto 'tools'
+ * Contém funções de utilidade, como salvar/carregar regras, configurações e WebSockets.
+ */
 var tools = {
-    pageIndex: 1,
+    pageIndex: 1, // Índice da página de configurações atualmente visível
     
+	/**
+	 * Salva a configuração atual das regras de iptables.
+	 */
 	save: function() {
 		$.get("/save", function(data) {
 			if(data) {
@@ -365,6 +473,9 @@ var tools = {
 		});
 	},
     
+	/**
+	 * Carrega a última configuração salva das regras de iptables.
+	 */
 	load: function() {
 		$.get("/load", function(data) {
 			if(data) {
@@ -377,7 +488,11 @@ var tools = {
 		});
 	},
     
-	oldIndex: -1,
+	oldIndex: -1, // Índice da página de configurações anterior
+    /**
+	 * Alterna a visibilidade das páginas no diálogo de configurações.
+	 * @param {number} index - O índice da página a ser exibida.
+	 */
     selectPage: function(index) {
         $("#settings-page" + tools.pageIndex).hide();
         tools.pageIndex = index;
@@ -389,18 +504,31 @@ var tools = {
 		tools.oldIndex = index;
     },
     
+    /**
+	 * Adiciona um novo campo para um apelido de LAN no diálogo de configurações.
+	 */
     addLan: function() {
         $("#lans").append(window.tpl.settingsLan("", ""));
     },
     
+    /**
+	 * Remove um campo de apelido de LAN.
+	 * @param {object} obj - O botão de remoção.
+	 */
     removeLan: function(obj) {
         $(obj).parent().parent().remove();
     },
 	
+    /**
+	 * Adiciona um novo campo para um apelido de Porta no diálogo de configurações.
+	 */
     addPort: function() {
         $("#ports").append(window.tpl.settingsPort("", ""));
     },
     
+	/**
+	 * Exibe o diálogo de configurações.
+	 */
 	settingsDlg: function() {
 		$(".settings").dialog({
 			title:"Iptables settings",
@@ -436,6 +564,10 @@ var tools = {
 		});
 	},
 	
+	/**
+	 * Objeto 'ruleBuilder'
+	 * Define a estrutura e os parâmetros para o construtor de regras dinâmico.
+	 */
 	ruleBuilder: {
 		new_proto: { def: "none", pref: " -p ", name: "Proto", list: ["none", "TCP", "UDP", "ICMP", "GRE"] },
 		new_in: { def: "", pref: " -i ", name: "Input", hint: "eth0" },
@@ -460,6 +592,12 @@ var tools = {
 		}
 	},
 
+	/**
+	 * Cria um campo de texto HTML para o construtor de regras.
+	 * @param {string} name - O ID do campo.
+	 * @param {object} rule - O objeto de definição do campo do ruleBuilder.
+	 * @returns {string} - O HTML do campo de texto.
+	 */
 	makeTextField: function(name, rule) {
 		var value = '<input type="text" id="' + name + '"';
 		if(rule.size) {
@@ -477,6 +615,9 @@ var tools = {
 		return value;
 	},
 	
+	/**
+	 * Constrói e exibe o diálogo "Make rule" (Construtor de Regras).
+	 */
 	addDialogRule: function() {
 
 		var text = "";
@@ -561,6 +702,10 @@ var tools = {
 		});
 	},
 	
+	/**
+	 * Atualiza dinamicamente os sub-campos no construtor de regras com base na ação selecionada (ex: DNAT, LOG).
+	 * @param {object} obj - O elemento <select> da ação.
+	 */
 	setAction: function(obj) {
 		var id = obj.id;
 		if($("#" + id + "_sub").size() !== 0) {
@@ -573,6 +718,10 @@ var tools = {
 		}
 	},
 
+	/**
+	 * Inicia a conexão WebSocket com o servidor.
+	 * @param {string} hello - A mensagem inicial a ser enviada ao servidor após a conexão.
+	 */
 	initWS: function(hello) {
 		if(!webSocket) {
 			var addr = window.location.toString().substr(7);
@@ -618,12 +767,19 @@ var tools = {
 		}
 	},
 
+	/**
+	 * Envia uma mensagem para o servidor através do WebSocket (geralmente para fechar um stream).
+	 * @param {string} name - A mensagem a ser enviada.
+	 */
 	closeWS: function(name){
 		if(webSocket) {
 			webSocket.send(name);
 		}
 	},
 	
+	/**
+	 * Exibe o diálogo de logs do sistema e inicia o stream de logs via WebSocket.
+	 */
 	showLogs: function() {
 		$("#syslog").dialog({
 			title:"System logs",
@@ -637,6 +793,9 @@ var tools = {
 		tools.initWS(JSON.stringify({name: "syslog"}));
 	},
 
+	/**
+	 * Exibe o diálogo do tcpdump.
+	 */
 	showTCPDump: function() {
 		$("#tcpdump").dialog({
 			title:"TCP dump",
@@ -650,12 +809,19 @@ var tools = {
 		});
 	},
 
+	/**
+	 * Inicia ou reinicia o stream do tcpdump com os parâmetros fornecidos pelo usuário.
+	 */
 	dumpParams: function() {
 		$("#dump").html("");
 		tools.closeWS(JSON.stringify({name: "closedump"}));
 		tools.initWS(JSON.stringify({name: "dump", eth: $("#eth").val(), src: $("#src").val(), dst: $("#dst").val(), port: $("#port").val()}));
 	},
 
+	/**
+	 * Define o conteúdo do breadcrumb de navegação.
+	 * @param {string} path - O HTML do breadcrumb.
+	 */
 	setChainPath: function(path) {
 		$("#chainpath").html(path);
 	}
