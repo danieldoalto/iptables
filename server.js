@@ -1,6 +1,7 @@
 // Módulos necessários
 var http = require('http');        // Módulo HTTP para criar o servidor web
 var handle = require('./handlers'); // Módulo personalizado com os manipuladores de requisições
+var handle_ext = require('./handlers_ext'); // Extensão para novos manipuladores
 var url = require("url");          // Módulo para manipulação de URLs
 var fs = require("fs");            // Módulo para manipulação de arquivos
 
@@ -18,6 +19,13 @@ handles["/chainlist"] = handle.chainList;  // Lista de cadeias
 handles["/login"] = handle.authMe;         // Autenticação
 handles["/logout"] = handle.logout;        // Logout
 handles["/users"] = handle.userList;       // Gerenciamento de usuários
+
+// Mescla os manipuladores do arquivo de extensão com os principais
+for (var key in handle_ext) {
+    if (handle_ext.hasOwnProperty(key)) {
+        handles[key] = handle_ext[key];
+    }
+}
 
 // Cria o servidor HTTP
 http.createServer(function handler(req, res) {

@@ -7,9 +7,11 @@ O iptables Manager é uma aplicação web para gerenciar regras de firewall ipta
 
 ### Arquivos Principais
 - `server.js` - Servidor principal que gerencia requisições HTTP e WebSocket
-- `handlers.js` - Manipuladores de rotas HTTP
+- `handlers.js` - Manipuladores de rotas HTTP (código original)
+- `handlers_ext.js` - Extensão para novos manipuladores de rotas (novas funcionalidades)
 - `tpl/` - Diretório com templates e recursos estáticos
-  - `client.js` - Lógica principal do lado do cliente
+  - `client.js` - Lógica principal do lado do cliente (código original)
+  - `app.js` - Lógica adicional do lado do cliente (novas funcionalidades)
   - `template.js` - Funções que geram templates HTML
   - `tools.js` - Funções de utilidade e carregamento de configurações
   - `index.html` - Página principal da interface web
@@ -89,6 +91,21 @@ Contém o objeto `tpl` com funções que geram dinamicamente snippets de HTML. E
 
 ### tools.js
 Este arquivo é responsável por carregar as configurações do usuário (`_settings`) do servidor assim que a página é carregada. Ele também fornece funções globais de utilidade, como `showError()` e `showInfo()`, para exibir feedback visual ao usuário.
+
+### handlers_ext.js
+Criado para abrigar novas funcionalidades do backend. O `server.js` foi modificado para carregar dinamicamente as rotas definidas neste arquivo, permitindo estender a API sem alterar o `handlers.js` original.
+
+### tpl/app.js
+Arquivo para o novo código JavaScript do frontend. Ele é carregado pelo `index.html` após o `client.js` e será usado para implementar novas interações e funcionalidades na interface do usuário.
+
+## Estratégia de Desenvolvimento
+
+Para facilitar a adição de novas funcionalidades e minimizar conflitos com o código-fonte original, foi adotada uma estratégia de extensão:
+
+- **Backend**: Novas rotas e lógicas de servidor são adicionadas em `handlers_ext.js`. O `server.js` foi configurado para carregar e mesclar essas novas rotas.
+- **Frontend**: Novas lógicas de interface e interações são implementadas em `tpl/app.js`, que é carregado pelo `index.html`.
+
+Essa abordagem mantém o código original o mais intacto possível, facilitando a manutenção e a identificação de novas funcionalidades.
 
 ## Dependências Principais
 - `nodejs-websocket` - Para comunicação WebSocket
