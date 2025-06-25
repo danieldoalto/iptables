@@ -18,6 +18,7 @@
 * Adicione e remova regras com um simples clique
 * Crie e gerencie chains personalizadas
 * **Mova blocos de regras**: Selecione um intervalo de regras e mova-as para uma nova posição na mesma chain, com visualização das alterações antes de aplicar
+* **Edit Chain (Edição textual de chain)**: Edite todas as regras de uma chain específica em formato texto, com segurança e sem afetar as demais chains/tabelas. Modal inspirado na janela de movimentação de regras, com campo de texto, botões Load, Reset, Salvar e Exit, e numeração visual para facilitar conferência.
 * **Backup e Restauração**: Crie um backup completo das suas regras e restaure a partir de um arquivo
 * Monitoramento em tempo real do syslog e tráfego de rede
 * Autenticação de usuário para acesso seguro
@@ -71,10 +72,26 @@
    - Selecione a tabela desejada (filter, nat, mangle)
    - Escolha uma chain para visualizar suas regras
    - Utilize os botões de ação para adicionar, remover ou modificar regras
+   - **Edit Chain**: Clique no botão "Edit Chain" para abrir a janela de edição textual da chain selecionada. Você pode:
+     - Carregar as regras atuais da chain em formato texto (1 regra por linha, numeradas apenas para visualização)
+     - Editar, adicionar ou remover regras diretamente no campo de texto
+     - Usar o botão "Load" para importar regras de um arquivo texto
+     - Usar o botão "Reset" para restaurar o conteúdo original da chain
+     - Salvar as alterações com "Salvar" (aplica apenas na chain selecionada, sem afetar as demais)
+     - Sair sem salvar com "Exit"
+   - O sistema garante que apenas as regras da chain editada são alteradas, preservando todas as outras chains/tabelas.
 
 3. **Backup e Restauração**:
    - Acesse o menu "Backup" para baixar um backup atual
    - Utilize "Restaurar" para carregar um backup anterior
+
+## 🛠️ Troubleshooting e Boas Práticas
+
+- Ao editar uma chain pelo modo textual, a numeração exibida é apenas para conferência visual e não faz parte da regra aplicada.
+- O sistema remove automaticamente a numeração antes de aplicar as regras, evitando duplicidade.
+- Caso observe qualquer comportamento inesperado (ex: regras duplicadas ou não aplicadas), verifique se está usando a versão mais recente do sistema.
+- Todas as operações de edição textual são atômicas: apenas a chain editada é alterada, as demais chains/tabelas permanecem intactas.
+- Logs detalhados são gerados no backend para facilitar diagnóstico de erros.
 
 ## 🤝 Contribuindo
 
@@ -85,6 +102,12 @@ Contribuições são bem-vindas! Sinta-se à vontade para abrir uma issue ou env
 3. Commit suas alterações (`git commit -m 'Add some AmazingFeature'`)
 4. Push para a branch (`git push origin feature/AmazingFeature`)
 5. Abra um Pull Request
+
+## 📜 Histórico de Correções Importantes
+
+- [2025-06] **Correção crítica na edição textual de chains**: Resolvido bug onde regras eram duplicadas ao salvar alterações em uma chain. Agora, apenas as regras da chain editada são substituídas, preservando todas as demais.
+- [2025-06] **Melhoria na robustez do backend**: Identificação das regras da chain feita de forma case-insensitive e precisa, evitando falsos positivos/negativos.
+- [2025-06] **Logs detalhados**: Adicionados logs extensivos para facilitar o diagnóstico e manutenção.
 
 ## 📜 Licença
 
