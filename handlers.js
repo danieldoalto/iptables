@@ -1,15 +1,23 @@
+/**
+ * handlers.js
+ * 
+ * Este arquivo contém todos os manipuladores de rota (route handlers) para as requisições HTTP.
+ * Ele é responsável por executar comandos `iptables`, gerenciar configurações e autenticação de usuários.
+ */
 var proc = require('child_process');
 var fs = require("fs");
 var url = require("url");
 var querystring = require("querystring");
 
 module.exports = {
+	// --- Autenticação e Configurações ---
+
 	
-	auth: false,
-	authUsers: {},
+	auth: false, // Flag que indica se a autenticação está habilitada globalmente (se não há senha).
+	authUsers: {}, // Objeto para rastrear sessões de usuários autenticados pelo IP.
 	
-	settingsDir: "/etc/iptables/config.json",
-	_settings: {
+	settingsDir: "/etc/iptables/config.json", // Caminho para o arquivo de configuração.
+	_settings: { // Objeto com as configurações padrão.
 		savePath: "/etc/iptables/rules.save",
 		user: "admin",
 		pass: "",
@@ -17,6 +25,10 @@ module.exports = {
 		themes: []
 	},
 	
+	/**
+	 * Carrega as configurações do arquivo JSON especificado em 'settingsDir'.
+	 * Se o arquivo não existir, usa as configurações padrão.
+	 */
 	loadSettings: function() {
 		fs.exists(this.settingsDir, function(ex){
 			if(ex) {
@@ -36,6 +48,9 @@ module.exports = {
 		});
 	},
 	
+	/**
+	 * Salva o objeto '_settings' atual no arquivo de configuração JSON.
+	 */
 	saveSettings: function() {
 		fs.writeFile(this.settingsDir, JSON.stringify(this._settings), function(err) {
 			if(err) {
@@ -46,6 +61,12 @@ module.exports = {
 		});
 	},
 	
+	// --- Manipuladores de Rotas Principais ---
+
+	/**
+	 * Rota: /
+	 * Serve a página principal da aplicação (index.html).
+	 */
 	index: function(req, res) {
 		fs.readFile('./tpl/index.html', [], function(err, data) {
 			//res.writeHead(320, {"Content-Type": "text/plain"});
@@ -53,6 +74,12 @@ module.exports = {
 		});
 	},
 	
+	/**
+	 * Rota: /show
+	 * Retorna a lista de regras para uma tabela e chain específicas.
+	 * Parâmetros (query string): t (tabela), c (chain).
+	 * Ex: /show?t=filter&c=INPUT
+	 */
 	showChannel: function(req, res) {
 		var query = url.parse(req.url).query;
 		var args = querystring.parse(query);
@@ -65,6 +92,12 @@ module.exports = {
 		});
 	},
 	
+	/**
+	 * Rota: /delete
+	 * Deleta uma regra específica de uma tabela e chain.
+	 * Parâmetros (query string): t (tabela), c (chain), i (índice da regra).
+	 * Ex: /delete?t=filter&c=INPUT&i=1
+	 */
 	deleteRule: function(req, res) {
 		var query = url.parse(req.url).query;
 		var args = querystring.parse(query);
@@ -74,6 +107,10 @@ module.exports = {
 		});
 	},
 	
+	/**
+	 * Rota: /insert
+	 * Insere uma nova regra. A regra completa é enviada no corpo da requisição POST.
+	 */
 	insertRule: function (req, res) {
 		var body = '';
 	    req.on('data', function (data) {
@@ -95,6 +132,12 @@ module.exports = {
 	    });
 	},
 	
+	/**
+	 * Rota: /monitor
+	 * Retorna as estatísticas (pacotes, bytes) para as regras de uma tabela e chain.
+	 * Usa 'iptables -L -v -n' para obter os dados.
+	 * Parâmetros (query string): t (tabela), c (chain).
+	 */
 	monitor: function(req, res) {
 		var query = url.parse(req.url).query;
 		var args = querystring.parse(query);
@@ -108,6 +151,10 @@ module.exports = {
 		});
 	},
 	
+	/**
+	 * Rota: /chain_list
+	 * Retorna uma lista de todas as chains customizadas das tabelas 'filter', 'nat' e 'mangle'.
+	 */
 	chainList: function(req, res) {
 		var new_arr = [];
 		var n = 0;
@@ -149,6 +196,10 @@ module.exports = {
 		});
 	},
     
+    /**
+     * Rota: /save
+     * Salva a configuração atual do iptables para o arquivo definido em '_settings.savePath' usando 'iptables-save'.
+     */
     save: function(req, res) {
         proc.exec("iptables-save > " + module.exports._settings.savePath, function(error, stdout, stderr) {
 
@@ -156,6 +207,10 @@ module.exports = {
 		});
     },
     
+    /**
+     * Rota: /load
+     * Carrega (restaura) as regras de iptables a partir do arquivo definido em '_settings.savePath' usando 'iptables-restore'.
+     */
     load: function(req, res) {
         proc.exec("iptables-restore < " + module.exports._settings.savePath, function(error, stdout, stderr) {
 
@@ -163,6 +218,11 @@ module.exports = {
 		});
     },
 	
+	/**
+	 * Rota: /settings
+	 * GET: Retorna o objeto de configurações atual, incluindo a lista de temas disponíveis.
+	 * POST (com ?c=save): Salva as configurações enviadas no corpo da requisição.
+	 */
 	settings: function(req, res) {
 		var query = url.parse(req.url).query;
 		var args = querystring.parse(query);
@@ -192,6 +252,13 @@ module.exports = {
 		}
 	},
 	
+	// --- Manipuladores de Autenticação ---
+
+	/**
+	 * Rota: /login
+	 * Processa a tentativa de login. Se bem-sucedido, armazena o IP do usuário e redireciona para a home.
+	 * Se o caminho não for /login, redireciona para a página de autenticação.
+	 */
 	authMe: function(req, res) {
 		var pathname = url.parse(req.url).pathname;
 		
@@ -223,11 +290,20 @@ module.exports = {
 		}
 	},
 	
+	/**
+	 * Verifica se um usuário está autenticado, baseado no IP da requisição.
+	 * @param {object} req - O objeto da requisição.
+	 * @returns {boolean} - True se o usuário estiver autenticado, false caso contrário.
+	 */
 	isAuth: function(req) {
 		var ip = req.connection.remoteAddress;
 		return module.exports.auth || module.exports.authUsers[ip];
 	},
 	
+	/**
+	 * Rota: /logout
+	 * Desconecta o usuário removendo seu IP da lista de usuários autenticados e redireciona para a página de login.
+	 */
 	logout: function(req, res) {
 		var ip = req.connection.remoteAddress;
 		module.exports.authUsers[ip] = 0;
@@ -235,6 +311,10 @@ module.exports = {
 		res.end();
 	},
 	
+	/**
+	 * Rota: /user_list (Aparentemente para debug)
+	 * Lista os IPs dos usuários atualmente autenticados.
+	 */
 	userList: function(req, res) {
 		for(var ip in module.exports.authUsers) {
 			res.write("IP: " + ip + " " + (module.exports.authUsers[ip] ? "auth" : "none"));
@@ -243,4 +323,5 @@ module.exports = {
 	}
 };
 
+// Carrega as configurações ao iniciar o módulo.
 module.exports.loadSettings();
