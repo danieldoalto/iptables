@@ -174,5 +174,43 @@ const app = {
                 $('#file-name-display').text('Nenhum arquivo selecionado');
             }
         });
+    },
+    
+    /**
+     * Inicia o processo de edição da chain atual.
+     * Por enquanto, apenas chama o endpoint para teste.
+     */
+    editChain: function() {
+        // Usar as variáveis globais channel e table definidas em client.js
+        const currentChain = channel;
+        const currentTable = table;
+        
+        if (!currentChain || !currentTable) {
+            showError("Nenhuma chain selecionada.");
+            return;
+        }
+        
+        console.log("[EditChain] Chain:", currentChain, "Table:", currentTable);
+        // Chama o endpoint de edição de chain
+        $.ajax({
+            type: 'POST',
+            url: '/editChain',
+            data: {
+                chain: currentChain,
+                table: currentTable
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    showInfo(response.message || "Edit Chain endpoint chamado com sucesso!");
+                } else {
+                    showError(response.error || "Erro ao chamar o endpoint de edição de chain.");
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error("[EditChain] Erro:", error);
+                showError("Erro na requisição: " + error);
+            }
+        });
     }
 };

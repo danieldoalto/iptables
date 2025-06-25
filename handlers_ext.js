@@ -325,3 +325,51 @@ exports.restoreRules = restoreRules;
 exports.moveRulesBlock = moveRulesBlock;
 exports.previewMoveRules = previewMoveRules;
 
+/**
+ * Manipulador para a rota /editChain.
+ * Endpoint temporário para futura implementação de edição de chains.
+ */
+function editChain(req, res) {
+    console.log("Request handler 'editChain' was called.");
+    
+    // Extrair dados da requisição
+    var body = '';
+    req.on('data', function(data) {
+        body += data;
+        console.log("[editChain] Recebendo dados: " + data);
+    });
+    
+    req.on('end', function() {
+        try {
+            var post = querystring.parse(body);
+            console.log("[editChain] Dados recebidos:", post);
+            console.log("[editChain] Chain:", post.chain, "Table:", post.table);
+            
+            // Resposta temporária
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ 
+                success: true, 
+                message: "Edit Chain endpoint is working. Functionality coming soon!",
+                data: post
+            }));
+            console.log("[editChain] Resposta enviada com sucesso.");
+        } catch (error) {
+            console.error("[editChain] Erro ao processar requisição:", error);
+            res.writeHead(500, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ 
+                success: false, 
+                error: "Erro ao processar requisição: " + error.message 
+            }));
+        }
+    });
+}
+
+// Exporta os novos manipuladores para que o server.js possa usá-los.
+exports.backupRules = backupRules;
+exports.restoreRules = restoreRules;
+exports.moveRulesBlock = moveRulesBlock;
+exports.previewMoveRules = previewMoveRules;
+exports.editChain = editChain;
+
+// Adiciona os novos manipuladores ao objeto module.exports
+module.exports = exports;

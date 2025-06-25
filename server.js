@@ -34,6 +34,9 @@ for (var key in handle_ext) {
     }
 }
 
+// Registrar explicitamente o endpoint editChain
+handles["/editChain"] = handle_ext.editChain;
+
 // Log de diagnóstico para verificar as rotas carregadas
 console.log("Rotas carregadas:");
 console.log(Object.keys(handles));
