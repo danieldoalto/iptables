@@ -30,6 +30,7 @@ $(document).ready(function(){
 	setInterval(rules.monitor, 1000);
 	// Seleciona a primeira página de ferramentas/configurações por padrão
 	tools.selectPage(1);
+
 });
 
 // Lógica para os menus dropdown
@@ -210,6 +211,8 @@ var parser = {
  * Contém métodos para gerenciar as regras de iptables (exibir, adicionar, remover, etc.).
  */
 var rules = {
+	currentChain: null,
+	currentTable: null,
 	/**
 	 * Exibe a lista de regras para uma chain e tabela específicas.
 	 * @param {string} name - O nome da chain.
@@ -236,7 +239,11 @@ var rules = {
 	 * @param {string} chainTable - O nome da tabela.
 	 * @param {boolean} addPath - Se true, adiciona a chain ao caminho de navegação.
 	 */
-	showListWithPath: function (name, chainTable, addPath) {
+		showListWithPath: function (name, chainTable, addPath) {
+		this.currentChain = name;
+		this.currentTable = chainTable;
+		console.log(`[Debug] State updated: table='${this.currentTable}', chain='${this.currentChain}'`);
+
 		rules.showList(name, chainTable);
 
 		var obj = {chain: name.toUpperCase(), table: chainTable};

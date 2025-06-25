@@ -167,12 +167,46 @@
 		<!-- Janela Modal para Backup e Restore -->
 		<div id="backup-dialog" title="Backup & Restore de Regras" style="display:none;">
 			<p><b>Fazer Backup</b></p>
-			<p>Clique no botão "Gerar Backup" para baixar um arquivo com as regras atuais.</p>
+			<p>Clique no botão abaixo para baixar um arquivo <code>.fw</code> com as regras atuais.</p>
+			<button id="download-backup">Gerar e Baixar Backup</button>
 			<hr style="margin: 15px 0;">
-			<p><b>Recuperar Backup</b></p>
-			<p>Selecione um arquivo de backup para restaurar as regras. <br/><b>Atenção:</b> Isto substituirá todas as regras existentes.</p>
-			<input type="file" id="restore-file-input" accept=".rules,.txt" style="width: 100%;"/>
+			<p><b>Restaurar de um Arquivo</b></p>
+			<form id="restore-form" enctype="multipart/form-data" style="display: flex; align-items: center; gap: 10px;">
+				<label for="restore-file-input">Selecione o arquivo de backup:</label>
+				<input type="file" id="restore-file-input" name="rulesFile" accept=".fw">
+				<button type="submit" id="upload-restore">Restaurar Regras</button>
+			</form>
 		</div>
 
-	</body>
+		<!-- Janela Modal para Mover Bloco de Regras -->
+		<div id="move-rule-dialog" title="Mover Bloco de Regras" style="display:none;">
+			<p>Selecione o intervalo de regras a ser movido e a posição de destino.</p>
+			<form>
+				<fieldset>
+					<label for="move-from-start">Regra Inicial (A):</label>
+					<input type="number" id="move-from-start" min="1" class="text ui-widget-content ui-corner-all">
+					<label for="move-from-end">Regra Final (B):</label>
+					<input type="number" id="move-from-end" min="1" class="text ui-widget-content ui-corner-all">
+					<label for="move-to-index">Posição de Destino (C):</label>
+					<input type="number" id="move-to-index" min="1" class="text ui-widget-content ui-corner-all">
+				</fieldset>
+			</form>
+		</div>
+
+		<!-- Janela Modal para Confirmar Movimentação de Regras -->
+		<div id="move-confirm-dialog" title="Confirmar Movimentação de Regras" style="display:none;">
+			<p>Por favor, revise as alterações. As regras serão modificadas conforme abaixo.</p>
+			<div style="display: flex; justify-content: space-between;">
+				<div style="width: 48%;">
+					<h4>Estado Atual</h4>
+					<textarea id="original-rules-preview" readonly style="width: 100%; height: 300px; font-family: monospace;"></textarea>
+				</div>
+				<div style="width: 48%;">
+					<h4>Novo Estado (Proposto)</h4>
+					<textarea id="new-rules-preview" readonly style="width: 100%; height: 300px; font-family: monospace;"></textarea>
+				</div>
+			</div>
+		</div>
+
+</body>
 </html>
