@@ -1,14 +1,23 @@
 /* Estilos Genéricos para Modais */
+/* Garante que a área de conteúdo da modal siga o tema principal */
+.ui-dialog .ui-dialog-content {
+  padding: 0 !important;
+  background: #f3f3f3 !important; /* Cor de fundo do tema */
+}
+
 .modal-container {
-  padding: 5px;
-  color: white;
-  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 10px;
+  height: 100%;
+  box-sizing: border-box;
 }
 
 .modal-section {
   padding: 15px;
-  background-color: #444;
-  border: 1px solid #111111;
+  background-color: #e1e1e1; /* Cor de fundo da seção do tema */
+  border: 1px solid #bbbbbb;   /* Cor da borda do tema */
   margin-bottom: 10px;
   border-radius: 3px;
 }
@@ -16,8 +25,8 @@
 .modal-section h3 {
   margin-top: 0;
   margin-bottom: 10px;
-  color: white;
-  border-bottom: 1px solid #111111;
+  color: black;
+  border-bottom: 1px solid #bbbbbb;
   padding-bottom: 5px;
   font-size: 13px;
   font-weight: bold;
@@ -26,19 +35,19 @@
 .modal-description {
   margin-bottom: 15px;
   font-size: 12px;
-  color: #ccc;
+  color: black;
   line-height: 1.4;
 }
 
 .small-text {
   font-size: 11px;
-  color: #8e8eda;
+  color: #00008b; /* Azul escuro para melhor contraste */
   font-style: italic;
 }
 
 .section-divider {
   height: 1px;
-  background-color: #111111;
+  background-color: #bbbbbb;
   margin: 15px 0;
 }
 
@@ -95,32 +104,32 @@
 }
 
 .file-input-label {
-  color: white;
+  color: black;
   padding: 5px 11px;
   cursor: pointer;
   display: inline-block;
   text-align: center;
   margin-bottom: 8px;
   border-radius: 5px;
-  background: -webkit-gradient(linear, 0 0, 0 100%, from(#444), to(#323232));
-  background: -moz-linear-gradient(top, #444, #323232);
-  border: 1px solid #111111;
-  box-shadow: 0 0 5px #111;
+  background: -webkit-gradient(linear, 0 0, 0 100%, from(#eee), to(gainsboro));
+  background: -moz-linear-gradient(top, #eee, gainsboro);
+  border: 1px solid #bbbbbb;
+  box-shadow: 0 0 5px #ccc;
   font-size: 12px;
 }
 
 .file-input-label:hover {
-  background: -webkit-gradient(linear, 0 0, 0 100%, from(#565656), to(#444444));
-  background: -moz-linear-gradient(top, #565656, #444444);
+  background: -webkit-gradient(linear, 0 0, 0 100%, from(white), to(#eeeeee));
+  background: -moz-linear-gradient(top, white, #eeeeee);
 }
 
 .file-name-display {
   margin-top: 5px;
   padding: 3px 5px;
-  background-color: #2b2b2b;
-  border: 1px solid #111111;
+  background-color: #f3f3f3;
+  border: 1px solid #bbbbbb;
   font-style: italic;
-  color: #8e8eda;
+  color: #00008b;
   font-size: 11px;
 }
 
@@ -129,16 +138,16 @@
   display: block;
   margin: 10px 0 5px;
   font-weight: bold;
-  color: #eee;
+  color: black;
 }
 
 .modal-section form input[type="number"],
 .modal-section form input[type="text"] {
   width: 95%;
   padding: 8px;
-  border: 1px solid #111;
-  background-color: #2b2b2b;
-  color: #fff;
+  border: 1px solid #bbbbbb;
+  background-color: #f3f3f3;
+  color: black;
   border-radius: 3px;
 }
 
@@ -150,15 +159,16 @@
 .preview-pane h3 {
     margin-top: 0;
     font-size: 13px;
+    color: black;
 }
 
 .preview-pane textarea {
     width: 100%;
     height: 300px;
     font-family: monospace;
-    background-color: #2b2b2b;
-    border: 1px solid #111;
-    color: #eee;
+    background-color: #f3f3f3;
+    border: 1px solid #bbbbbb;
+    color: black;
     padding: 5px;
     box-sizing: border-box;
 }
@@ -166,10 +176,10 @@
 /* Código para compatibilidade com o tema */
 .modal-container code {
   font-family: monospace;
-  background-color: #2b2b2b;
+  background-color: #dcdcdc;
   padding: 1px 3px;
-  border: 1px solid #111111;
-  color: #8e8eda;
+  border: 1px solid #bbbbbb;
+  color: #00008b;
 }
 
 /* Responsividade */
