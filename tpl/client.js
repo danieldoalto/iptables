@@ -172,7 +172,7 @@ var parser = {
 		else if(key === 13) {
 			this.editRuleRow.html(this.makeRuleText(text = this.editRuleRow.children().val()));
 			this.endEditRule();
-			text = text.replace("-A " + channel.toUpperCase(), "-R " + channel.toUpperCase() + " " + this.editRuleRowIndex); 
+			text = text.replace("-A " + channel, "-R " + channel + " " + this.editRuleRowIndex); 
 			rules.insertText(text);
 		}
 	},
@@ -224,7 +224,7 @@ var rules = {
 
 		$(".itemselect").removeClass("itemselect").addClass("item");
 		$(".item").each(function(index, obj) {
-			if($(obj).text() === name.toUpperCase()) {
+			if($(obj).text().toLowerCase() === name.toLowerCase()) {
 				$(obj).removeClass("item").addClass("itemselect");
 			}
 		});
@@ -246,7 +246,7 @@ var rules = {
 
 		rules.showList(name, chainTable);
 
-		var obj = {chain: name.toUpperCase(), table: chainTable};
+		var obj = {chain: name, table: chainTable};
 		if(addPath) {
 			chainPath.push(obj);
 		}
@@ -379,12 +379,12 @@ var rules = {
 	addChainName: function(name, _table) {
 		channel = name;
 		table = _table;
-		$.post("insert?c=" + name + "&t=" + table, {rule: "-t " + table + " -N " + name.toUpperCase()}, function(data){
+		$.post("insert?c=" + name + "&t=" + table, {rule: "-t " + table + " -N " + name}, function(data){
 			if(data) {
 				if(data.substr(0, 1) === "[") {
 					parser.parseChannels(data);
 					//$(".dropdown").append(window.tpl.customChain(name.toUpperCase()));
-					$(window.tpl.customChain(name.toUpperCase(), _table)).prependTo(".newchain");
+					$(window.tpl.customChain(name, _table)).prependTo(".newchain");
 				}
 				else {
 					showError(data);
@@ -422,7 +422,7 @@ var rules = {
 		var rName = $(obj).attr("chainname");
 		var rTable = $(obj).attr("chaintable");
 		
-		$.post("insert?t=" + rTable + "&c=" + rName, {rule: "-t " + rTable + " -X " + rName.toUpperCase()}, function(data){
+		$.post("insert?t=" + rTable + "&c=" + rName, {rule: "-t " + rTable + " -X " + rName}, function(data){
 			if(data) {
 				if(data.substr(0, 1) === "[") {
 					parser.parseChannels(data);
@@ -439,7 +439,7 @@ var rules = {
 	 * Envia um pedido para zerar os contadores da chain atual.
 	 */
 	resetCounters: function() {
-		$.post("insert?t=" + table + "&c=" + channel, {rule: "-t " + table + " -Z " + channel.toUpperCase()}, function(data){
+		$.post("insert?t=" + table + "&c=" + channel, {rule: "-t " + table + " -Z " + channel}, function(data){
 			if(data) {
 				if(data.substr(0, 1) === "[") {
 					parser.parseChannels(data);
