@@ -24,7 +24,7 @@ O iptables Manager é uma aplicação web para gerenciar regras de firewall ipta
 ## Funcionalidades Principais
 
 ### Interface do Usuário (UI)
-- **Menus Dropdown**: Para seleção de tabelas (`filter`, `nat`, `mangle`) e chains.
+- **Menus Dropdown**: Para seleção de tabelas (`filter`, `nat`, `mangle`, `raw`) e chains.
 - **Visualização de Regras**: Tabela principal que exibe as regras da chain selecionada, com syntax highlighting para melhor legibilidade.
 - **Edição In-line**: Permite editar regras diretamente na tabela.
 - **Breadcrumb de Navegação**: Facilita a navegação entre chains aninhadas.
@@ -48,6 +48,17 @@ O iptables Manager é uma aplicação web para gerenciar regras de firewall ipta
 
 ### Autenticação
 - **Sistema de Sessão Segura**: A autenticação foi refatorada para usar sessões baseadas em cookies (`HttpOnly`), garantindo que cada login seja único e seguro, em vez do antigo sistema baseado em IP.
+
+## Histórico de Alterações
+
+### v1.1 (2025-07-10) - Suporte à Tabela Raw
+- **Adicionado suporte à tabela `raw`**:
+  - **Backend**:
+    - `handlers.js`: Modificado para incluir a tabela `raw` na função `chainList`, permitindo que o frontend a liste.
+    - `handlers_ext.js`: Atualizado para permitir a edição de chains da tabela `raw` através da função `editChain`.
+  - **Frontend**:
+    - `tpl/index.html`: Menus de seleção de tabelas atualizados para incluir a opção `raw`.
+    - `tpl/client.js`: Comentários atualizados para refletir o suporte à nova tabela.
 - **Login/Logout**: Fluxo padrão de autenticação com geração de ID de sessão único no login e invalidação no logout.
 
 ## Estrutura do Código
