@@ -143,7 +143,7 @@ module.exports = {
 		var query = url.parse(req.url).query;
 		var args = querystring.parse(query);
 
-		var run = "iptables -t " + args.t + " -L " + args.c.toUpperCase() + " -vn";
+		var run = "iptables -t " + args.t + " -L " + args.c + " -vn";
 		proc.exec(run, function(error, stdout, stderr) {
 			var arr = stdout.split("\n");
 			
