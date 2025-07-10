@@ -24,6 +24,7 @@
 					<a class="item" onclick="rules.showListWithPath('INPUT', 'filter');">INPUT</a>
 					<ul class="dropdown" style="display: none;">
 						<li><a class="item" onclick="rules.showListWithPath('INPUT', 'filter');">filter</a></li>
+						<li><a class="item" onclick="rules.showListWithPath('INPUT', 'nat');">nat</a></li>
 						<li><a class="item" onclick="rules.showListWithPath('INPUT', 'mangle');">mangle</a></li>
 					</ul>
 				</li>
@@ -33,12 +34,14 @@
 						<li><a class="item" onclick="rules.showListWithPath('OUTPUT', 'filter');">filter</a></li>
 						<li><a class="item" onclick="rules.showListWithPath('OUTPUT', 'nat');">nat</a></li>
 						<li><a class="item" onclick="rules.showListWithPath('OUTPUT', 'mangle');">mangle</a></li>
+						<li><a class="item" onclick="rules.showListWithPath('OUTPUT', 'raw');">raw</a></li>
 					</ul>
 				</li>
 				<li>
 					<a class="item" onclick="rules.showListWithPath('FORWARD', 'filter');">FORWARD</a>
 					<ul class="dropdown" style="display: none;">
 						<li><a class="item" onclick="rules.showListWithPath('FORWARD', 'filter');">filter</a></li>
+						<li><a class="item" onclick="rules.showListWithPath('FORWARD', 'nat');">nat</a></li>
 						<li><a class="item" onclick="rules.showListWithPath('FORWARD', 'mangle');">mangle</a></li>
 					</ul>
 				</li>
@@ -47,6 +50,7 @@
 					<ul class="dropdown" style="display: none;">
 						<li><a class="item" onclick="rules.showListWithPath('PREROUTING', 'nat');">nat</a></li>
 						<li><a class="item" onclick="rules.showListWithPath('PREROUTING', 'mangle');">mangle</a></li>
+						<li><a class="item" onclick="rules.showListWithPath('PREROUTING', 'raw');">raw</a></li>
 					</ul>
 				</li>
 				<li>
@@ -131,7 +135,7 @@
 				<form>
 					<table class="main">
 						<tr><td class="cmd">Name:</td><td><input type="text" id="chainname"/></td></tr>
-						<tr><td class="cmd">Table:</td><td><select id="chaintable"><option value="filter">filter</option><option value="nat">nat</option><option value="mangle">mangle</option></select></td></tr>
+						<tr><td class="cmd">Table:</td><td><select id="chaintable"><option value="filter">filter</option><option value="nat">nat</option><option value="mangle">mangle</option><option value="raw">raw</option></select></td></tr>
 					</table>
 				</form>
 			</div>

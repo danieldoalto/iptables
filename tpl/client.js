@@ -3,7 +3,7 @@
 
 // Variáveis globais para manter o estado da aplicação
 var channel = ""; // Chain (cadeia) atualmente selecionada
-var table = "";   // Tabela atualmente selecionada (filter, nat, mangle)
+var table = "";   // Tabela atualmente selecionada (filter, nat, mangle, raw)
 var webSocket;    // Objeto WebSocket para comunicação em tempo real
 var chainPath = []; // Array para manter o histórico de navegação (breadcrumb)
 

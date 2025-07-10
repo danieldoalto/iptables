@@ -154,7 +154,7 @@ module.exports = {
 	
 	/**
 	 * Rota: /chain_list
-	 * Retorna uma lista de todas as chains customizadas das tabelas 'filter', 'nat' e 'mangle'.
+	 * Retorna uma lista de todas as chains customizadas das tabelas 'filter', 'nat', 'mangle' e 'raw'.
 	 */
 	chainList: function(req, res) {
 		var new_arr = [];
@@ -191,7 +191,18 @@ module.exports = {
 						}
 					}
 					
-					res.end(JSON.stringify(new_arr));
+					proc.exec("iptables -t raw -S", function(error, stdout, stderr) {
+						var arr = stdout.split("\n");
+
+						for(var i = 0; i < arr.length; i++) {
+							var item = arr[i];
+							if(item.indexOf("-N") === 0) {
+								new_arr[n++] = item.substring(3) + " (raw)";
+							}
+						}
+						
+						res.end(JSON.stringify(new_arr));
+					});
 				});
 			});
 		});

@@ -372,8 +372,8 @@ function editChain(req, res) {
             const standardTables = {
                 "filter": "filter", 
                 "nat": "nat", 
-                "mangle": "mangle", 
-                "raw": "raw", 
+                "mangle": "mangle",
+                "raw": "raw",
                 "security": "security"
             };
             
